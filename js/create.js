@@ -96,57 +96,111 @@
     $("summary").innerHTML = `
       <div><span>Token  </span> ${esc($("name").value || "—")} ($${esc($("symbol").value || "—")})</div>
       <div><span>Network</span> ${esc(state.chain.name)}</div>
-      <div><span>Creator</span> ${W.address ? short(W.address) : "connect wallet"}</div>`;
+      <div><span>Creator</span> ${W.address ? short(W.address) : "connect wallet"}</div>
+      <div><span>Fee    </span> ${state.feeWei == null ? "—" : ethers.formatEther(state.feeWei) + " " + state.chain.symbol} + gas</div>`;
     $("deploy").textContent = W.address ? "🚀 Launch token" : "Connect wallet to launch";
   }
   function renderDemo() {
-    $("demoNote").innerHTML = state.chain.factory ? "" :
-      `<span class="demo">DEMO MODE — no launch contract configured for ${esc(state.chain.name)}; launches are simulated locally</span>`;
+    $("demoNote").innerHTML = state.chain.factory
+      ? `<span class="live">● LIVE on ${esc(state.chain.name)} — every launch is on-chain instantly</span>`
+      : `<span class="demo">DEMO MODE — no launch contract configured for ${esc(state.chain.name)}; launches are simulated locally</span>`;
   }
   W.onChange(renderSummary);
 
   const setStatus = (msg, cls = "") => { const s = $("status"); s.className = "status " + cls; s.innerHTML = msg; };
 
+  // read-only factory (public RPC) for fee display
+  async function loadFee() {
+    const chain = state.chain;
+    if (!chain.factory || !window.ethers) return;
+    try {
+      const rp = new ethers.JsonRpcProvider(chain.rpc, chain.chainId, { staticNetwork: true });
+      state.feeWei = await new ethers.Contract(chain.factory, CFG.factoryAbi, rp).launchFee();
+      renderSummary();
+    } catch (_) {}
+  }
+
+  // shrink logo so it is cheap to store on-chain
+  function shrinkImage(dataUrl, size = 128) {
+    return new Promise((res) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement("canvas"); c.width = c.height = size;
+        const ctx = c.getContext("2d");
+        const s = Math.min(img.width, img.height);
+        ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+        let out = c.toDataURL("image/webp", 0.8);
+        if (!out.startsWith("data:image/webp")) out = c.toDataURL("image/jpeg", 0.8);
+        res(out);
+      };
+      img.onerror = () => res(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
+  const ZERO = "0x0000000000000000000000000000000000000000";
+
   $("deploy").onclick = async () => {
     const name = $("name").value.trim(), symbol = $("symbol").value.trim(), desc = $("desc").value.trim();
     if (!name || !symbol) return setStatus("Name and ticker are required.", "err");
-    if (!W.address && !(await W.connect().catch(() => false))) return;
+    if (!W.address && !(await W.connect())) return;
     const btn = $("deploy");
     btn.disabled = true;
     const chain = state.chain;
-    const image = state.image || "data:image/svg+xml;utf8," + encodeURIComponent(logoSVG(state.seed, symbol));
-    const meta = { name, symbol, description: desc, image, twitter: $("x").value.trim(), website: $("web").value.trim() };
+    const logo = state.image ? await shrinkImage(state.image) : "data:image/svg+xml;utf8," + encodeURIComponent(logoSVG(state.seed, symbol));
+    const socials = { twitter: $("x").value.trim(), telegram: "", discord: "", website: $("web").value.trim(), farcaster: "" };
 
     try {
-      let address, tx = null;
+      let address, curve = null, tx = null;
       if (chain.factory && window.ethers) {
-        if (W.chainId !== chain.chainId) { setStatus("Switching network…"); await W.switchChain(chain); }
-        setStatus("Confirm the transaction in your wallet…");
-        const provider = new ethers.BrowserProvider(window.ethereum);
+        if (W.chainId !== chain.chainId) { setStatus("Switching to " + esc(chain.name) + "…"); await W.switchChain(chain); }
+        const provider = new ethers.BrowserProvider(W.provider);
         const signer = await provider.getSigner();
         const factory = new ethers.Contract(chain.factory, CFG.factoryAbi, signer);
-        const uri = "data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(meta))));
-        const sent = await factory.createToken(name, symbol, uri, { value: ethers.parseEther(CFG.launchFee || "0") });
+
+        setStatus("Preparing launch…");
+        const [fee, canLaunch, economics] = await Promise.all([
+          factory.launchFee(),
+          factory.canLaunch(W.address),
+          factory.previewLaunchEconomics(chain.launchConfigId, ZERO),
+        ]);
+        if (!canLaunch) throw new Error("Launching is currently disabled for this wallet.");
+
+        const params = {
+          name, symbol, logo, description: desc, socials,
+          creatorFeeRecipient: W.address,
+          creatorTaxBps: 0,
+          buybackEnabled: false,
+          expectedEconomics: economics,
+          salt: ethers.hexlify(ethers.randomBytes(32)),
+        };
+        const args = [params, chain.launchConfigId, ZERO, []];
+        // simulate first: catches reverts and returns the new token address
+        [address, curve] = await factory.launchToken.staticCall(...args, { value: fee });
+
+        setStatus("Confirm the transaction in your wallet…");
+        const sent = await factory.launchToken(...args, { value: fee });
         tx = sent.hash;
-        setStatus(`Waiting for confirmation… <a href="${chain.explorer}/tx/${tx}" target="_blank" rel="noopener">view tx</a>`);
+        setStatus(`Waiting for confirmation… <a href="${chain.explorer}/tx/${tx}" target="_blank" rel="noopener">view tx ↗</a>`);
         const rc = await sent.wait();
-        for (const log of rc.logs) {
-          try { const ev = factory.interface.parseLog(log); if (ev && ev.name === "TokenCreated") { address = ev.args.token; break; } } catch (_) {}
-        }
+        if (rc.status !== 1) throw new Error("Transaction reverted.");
       } else {
         setStatus("Simulating launch (demo mode)…");
         await new Promise((r) => setTimeout(r, 1200));
         address = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(20)), (b) => b.toString(16).padStart(2, "0")).join("");
       }
-      Store.add({ ...meta, image: state.image, address, tx, chain: chain.key, creator: W.address, createdAt: Date.now(), mcap: 4200, change: 0, progress: 1, mine: true, demo: !chain.factory });
-      setStatus(`✅ $${esc(symbol)} launched${chain.factory ? "" : " (demo)"} at <span class="addr">${esc(address || "pending")}</span>. <a href="index.html?new=1"><b>See it on Explore →</b></a>`, "ok");
+      Store.add({ name, symbol, description: desc, image: logo.startsWith("data:image/svg") ? null : logo, twitter: socials.twitter, website: socials.website,
+        address, curve, tx, chain: chain.key, creator: W.address, createdAt: Date.now(), mcap: 0, change: 0, progress: 0, mine: true, demo: !chain.factory });
+      setStatus(`✅ $${esc(symbol)} is live${chain.factory ? "" : " (demo)"}! Taking you to Explore…`, "ok");
+      setTimeout(() => (location.href = "index.html?token=" + address), 1500);
     } catch (e) {
       console.error(e);
-      setStatus("Launch failed: " + esc(e.shortMessage || e.message || e), "err");
+      const msg = e.code === "ACTION_REJECTED" || e.code === 4001 ? "You rejected the transaction." : e.shortMessage || e.reason || e.message || String(e);
+      setStatus("Launch failed: " + esc(msg), "err");
     } finally {
       btn.disabled = false;
     }
   };
 
-  renderChains(); renderDemo(); renderSummary();
+  renderChains(); renderDemo(); renderSummary(); loadFee();
 })();

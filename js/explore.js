@@ -1,65 +1,137 @@
 (function () {
-  const { CFG, Store, logoHTML, esc, fmtUsd, ago, short, hash } = window.SCOTY;
+  const { CFG, W, Store, logoHTML, esc, fmtUsd, ago, short } = window.SCOTY;
   const $ = (id) => document.getElementById(id);
+  const chain = CFG.chains[0];
 
-  // Real tokens come from a Robinhood Chain indexer/API (not connected yet).
-  const SAMPLE = [];
+  let sort = "new";
+  let onchain = [];          // launches read from the Pons V2 factory
+  let loading = !!chain.factory;
+  let feedError = false;
 
-  let sort = "trending";
-  const all = () => [...Store.all(), ...SAMPLE];
+  // ── On-chain feed (Blockscout API for the Pons V2 factory) ──
+  async function getJSON(url) {
+    const r = await fetch(url, { headers: { accept: "application/json" } });
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  }
+
+  function tokenFromLog(log) {
+    const params = log.decoded && log.decoded.parameters;
+    if (params) {
+      const p = params.find((x) => x.type === "address" && /token/i.test(x.name) && !/pair|quote/i.test(x.name));
+      if (p) {
+        const creator = params.find((x) => x.type === "address" && /creator|launcher|deployer|sender/i.test(x.name));
+        return { address: p.value, creator: creator && creator.value };
+      }
+      return null; // decoded but not a launch event
+    }
+    return null;
+  }
+
+  async function loadFeed() {
+    if (!chain.factory || !chain.explorerApi) return;
+    try {
+      const data = await getJSON(`${chain.explorerApi}/addresses/${chain.factory}/logs`);
+      const seen = new Set();
+      const launches = [];
+      for (const log of data.items || []) {
+        const t = tokenFromLog(log);
+        if (!t || seen.has(t.address.toLowerCase())) continue;
+        seen.add(t.address.toLowerCase());
+        launches.push({ ...t, tx: log.transaction_hash || log.tx_hash, block: log.block_number });
+        if (launches.length >= 40) break;
+      }
+      onchain = await Promise.all(launches.map(async (l) => {
+        const [tok, tx] = await Promise.all([
+          getJSON(`${chain.explorerApi}/tokens/${l.address}`).catch(() => ({})),
+          l.tx ? getJSON(`${chain.explorerApi}/transactions/${l.tx}`).catch(() => ({})) : {},
+        ]);
+        return {
+          name: tok.name || "Unknown", symbol: tok.symbol || "???",
+          description: "", image: tok.icon_url || null,
+          address: l.address, creator: l.creator || (tx.from && tx.from.hash), tx: l.tx,
+          createdAt: tx.timestamp ? Date.parse(tx.timestamp) : Date.now(),
+          mcap: Number(tok.circulating_market_cap || 0) || (Number(tok.exchange_rate || 0) * Number(tok.total_supply || 0) / 10 ** Number(tok.decimals || 18)) || 0,
+          holders: Number(tok.holders_count || tok.holders || 0),
+          change: 0, progress: null, chain: chain.key,
+        };
+      }));
+    } catch (e) {
+      console.warn("Explore feed unavailable", e);
+      feedError = true;
+    }
+    loading = false;
+    stats(); render(); openFromUrl();
+  }
+
+  // merge on-chain launches with ones made from this browser (instant, before indexing)
+  function all() {
+    const map = new Map();
+    for (const t of onchain) map.set(t.address.toLowerCase(), t);
+    for (const t of Store.all()) {
+      if (!t.address) continue;
+      if (t.demo && chain.factory) continue; // hide old demo launches once live
+      const k = t.address.toLowerCase();
+      map.set(k, map.has(k) ? { ...map.get(k), description: t.description, image: map.get(k).image || t.image, twitter: t.twitter, website: t.website, mine: true } : t);
+    }
+    const me = W.address && W.address.toLowerCase();
+    return [...map.values()].map((t) => ({ ...t, mine: t.mine || (me && t.creator && t.creator.toLowerCase() === me) }));
+  }
 
   function stats() {
     const l = all();
-    $("sTokens").textContent = l.length;
-    $("sMcap").textContent = fmtUsd(l.reduce((s, t) => s + (t.mcap || 0), 0));
-    $("sGrad").textContent = l.filter((t) => t.progress >= 100).length;
+    $("sTokens").textContent = loading ? "…" : l.length;
+    $("sMcap").textContent = loading ? "…" : fmtUsd(l.reduce((s, t) => s + (t.mcap || 0), 0));
+    $("sGrad").textContent = loading ? "…" : l.reduce((s, t) => s + (t.holders || 0), 0);
   }
 
   function render() {
+    if (loading) { $("tokens").innerHTML = '<div class="empty">Loading launches…</div>'; return; }
     const q = $("q").value.trim().toLowerCase();
-    let l = all().filter((t) => !q || t.name.toLowerCase().includes(q) || t.symbol.toLowerCase().includes(q));
+    let l = all().filter((t) => !q || t.name.toLowerCase().includes(q) || t.symbol.toLowerCase().includes(q) || t.address.toLowerCase() === q);
     if (sort === "mine") l = l.filter((t) => t.mine);
     if (sort === "new") l.sort((a, b) => b.createdAt - a.createdAt);
     if (sort === "mcap") l.sort((a, b) => b.mcap - a.mcap);
-    if (sort === "trending") l.sort((a, b) => (b.change + (b.mine ? 1000 : 0)) - (a.change + (a.mine ? 1000 : 0)));
+    if (sort === "trending") l.sort((a, b) => (b.holders || 0) - (a.holders || 0) || b.mcap - a.mcap);
 
     $("tokens").innerHTML = l.length ? l.map((t, i) => `
       <button class="tok" data-i="${i}" type="button">
         <div class="tok-top">
           <div class="logo">${logoHTML(t)}</div>
           <div><b>${esc(t.name)}</b><small>$${esc(t.symbol)} · ${ago(t.createdAt)}</small></div>
-          ${t.mine ? `<span class="chip mine">${t.demo ? "yours · demo" : "yours"}</span>` : t.progress >= 100 ? '<span class="chip">graduated</span>' : ""}
+          ${t.mine ? `<span class="chip mine">${t.demo ? "yours · demo" : "yours"}</span>` : ""}
         </div>
-        <p>${esc(t.description)}</p>
-        <div class="meta"><span>MC ${fmtUsd(t.mcap)}</span><span class="${t.change >= 0 ? "up" : "down"}">${t.change >= 0 ? "▲" : "▼"} ${Math.abs(t.change).toFixed(1)}%</span></div>
-        <div class="curve" title="Bonding curve ${t.progress}%"><i style="width:${Math.min(t.progress, 100)}%"></i></div>
+        <p>${esc(t.description || "Launched on Robinhood Chain · " + short(t.address))}</p>
+        <div class="meta"><span>MC ${t.mcap ? fmtUsd(t.mcap) : "—"}</span><span>${t.holders ? t.holders + " holders" : "new"}</span></div>
       </button>`).join("")
-      : `<div class="empty">${sort === "mine" ? 'You haven\'t launched anything yet. <a href="create.html" style="color:var(--accent);font-weight:600">Create a token →</a>' : (q ? "No tokens match your search." : 'No tokens yet. <a href="create.html" style="color:var(--accent);font-weight:600">Be the first to launch →</a>')}</div>`;
+      : `<div class="empty">${
+          sort === "mine" ? 'You haven\'t launched anything yet. <a href="create.html" style="color:var(--accent);font-weight:600">Create a token →</a>'
+          : q ? "No tokens match your search."
+          : (feedError ? "Couldn't reach the Robinhood Chain explorer right now. " : "") + 'No tokens yet. <a href="create.html" style="color:var(--accent);font-weight:600">Be the first to launch →</a>'}</div>`;
 
     $("tokens").querySelectorAll(".tok").forEach((b) => (b.onclick = () => open(l[+b.dataset.i])));
   }
 
   function open(t) {
-    const chain = CFG.chains.find((c) => c.key === t.chain) || CFG.chains[0];
     const link = (u, txt) => (u ? `<a class="btn btn-sm" href="${esc(u)}" target="_blank" rel="noopener">${txt}</a>` : "");
     $("sheet").innerHTML = `
       <button class="close" aria-label="Close">✕</button>
       <div class="tok-top"><div class="logo">${logoHTML(t)}</div><div><b style="font-size:1.4rem">${esc(t.name)}</b><small>$${esc(t.symbol)} · ${esc(chain.name)}</small></div></div>
-      <p style="color:var(--muted);margin:10px 0 14px">${esc(t.description)}</p>
+      ${t.description ? `<p style="color:var(--muted);margin:10px 0 14px">${esc(t.description)}</p>` : '<div style="height:12px"></div>'}
       <div class="summary">
-        <div><span>Market cap </span> ${fmtUsd(t.mcap)}</div>
-        <div><span>Bonding   </span> ${t.progress}%${t.progress >= 100 ? " · graduated" : ""}</div>
+        <div><span>Market cap</span> ${t.mcap ? fmtUsd(t.mcap) : "—"}</div>
+        <div><span>Holders   </span> ${t.holders || "—"}</div>
         <div><span>Creator   </span> ${short(t.creator) || "—"}</div>
         <div><span>Launched  </span> ${ago(t.createdAt)}</div>
       </div>
       <div class="addr">${esc(t.address)}</div>
-      <div class="row">${t.sample || t.demo ? "" : link(`${chain.explorer}/token/${t.address}`, "Explorer ↗")}${link(t.twitter, "X ↗")}${link(t.website, "Website ↗")}
+      <div class="row">${t.demo ? "" : link(`${chain.explorer}/token/${t.address}`, "Explorer ↗")}${t.tx && !t.demo ? link(`${chain.explorer}/tx/${t.tx}`, "Launch tx ↗") : ""}${link(t.twitter, "X ↗")}${link(t.website, "Website ↗")}
         <button class="btn btn-sm" id="copy">Copy address</button></div>
       <div class="trade">
-        <button class="btn btn-main" disabled title="Trading not connected yet">Buy</button>
-        <button class="btn btn-dark" disabled title="Trading not connected yet">Sell</button>
+        <button class="btn btn-main" disabled title="Trading coming soon">Buy</button>
+        <button class="btn btn-dark" disabled title="Trading coming soon">Sell</button>
       </div>
-      ${t.sample ? '<p class="status">Sample token for preview.</p>' : t.demo ? '<p class="status">Demo launch — not on-chain.</p>' : ""}`;
+      ${t.demo ? '<p class="status">Demo launch — not on-chain.</p>' : '<p class="status">Live on Robinhood Chain.</p>'}`;
     $("modal").classList.add("open");
     $("sheet").querySelector(".close").onclick = close;
     $("copy").onclick = (e) => { navigator.clipboard?.writeText(t.address); e.target.textContent = "Copied!"; };
@@ -68,12 +140,21 @@
   $("modal").addEventListener("click", (e) => { if (e.target.id === "modal") close(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
 
+  let opened = false;
+  function openFromUrl() {
+    const a = new URLSearchParams(location.search).get("token");
+    if (!a || opened) return;
+    const t = all().find((x) => x.address.toLowerCase() === a.toLowerCase());
+    if (t) { opened = true; open(t); }
+  }
+
   $("q").addEventListener("input", render);
   $("sort").querySelectorAll("button").forEach((b) => (b.onclick = () => {
     $("sort").querySelectorAll("button").forEach((x) => x.classList.remove("on"));
     b.classList.add("on"); sort = b.dataset.s; render();
   }));
+  W.onChange(() => { stats(); render(); });
 
-  if (new URLSearchParams(location.search).get("new")) $("sort").querySelector('[data-s="mine"]').click();
-  stats(); render();
+  stats(); render(); openFromUrl();
+  loadFeed();
 })();
