@@ -1,225 +1,48 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SCOTY — Ruang Kreatif untuk Keluarga</title>
-<meta name="description" content="SCOTY adalah ruang aman bagi anak untuk berkarya, belajar, dan bertumbuh bersama keluarga.">
+<title>Explore — SCOTY</title>
+<meta name="description" content="SCOTY — explore and launch tokens on Pons v2.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
-
-<header class="nav">
-  <div class="container nav-inner">
-    <a href="#" class="logo"><span class="logo-mark">S</span>SCOTY</a>
-    <nav class="nav-links" id="navLinks">
-      <a href="#fitur">Fitur</a>
-      <a href="#cara">Cara Kerja</a>
-      <a href="#orangtua">Untuk Orang Tua</a>
-      <a href="#harga">Harga</a>
-      <a href="#faq">FAQ</a>
-    </nav>
-    <div class="nav-cta">
-      <a href="#" class="btn btn-ghost">Masuk</a>
-      <a href="#mulai" class="btn btn-primary">Coba Gratis</a>
-    </div>
-    <button class="menu-btn" id="menuBtn" aria-label="Buka menu">☰</button>
-  </div>
-</header>
+<body data-page="explore">
+<div id="nav"></div>
 
 <main>
-  <!-- HERO -->
-  <section class="hero">
-    <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
-    <div class="container hero-inner">
-      <div class="hero-text reveal">
-        <span class="pill">✨ Baru: Studio Cerita SCOTY</span>
-        <h1>Tempat anak <span class="hl">berkreasi</span>, keluarga ikut <span class="hl2">bertumbuh</span>.</h1>
-        <p class="lead">SCOTY membantu anak usia 5–12 tahun menggambar, bercerita, membuat musik, dan membangun game kecil — di ruang digital yang aman dan diawasi orang tua.</p>
-        <div class="hero-cta">
-          <a href="#mulai" class="btn btn-primary btn-lg">Mulai Gratis</a>
-          <a href="#cara" class="btn btn-outline btn-lg">▶ Lihat Cara Kerja</a>
-        </div>
-        <div class="trust">
-          <div class="avatars"><span>👧</span><span>👦</span><span>🧒</span><span>👩</span></div>
-          <p><strong>12.000+ keluarga</strong> sudah berkarya bersama SCOTY</p>
-        </div>
-      </div>
-      <div class="hero-visual reveal">
-        <div class="device">
-          <div class="device-top"><i></i><i></i><i></i></div>
-          <div class="canvas">
-            <div class="mascot">🦊</div>
-            <div class="bubble">Hai! Mau bikin apa hari ini?</div>
-            <div class="tiles">
-              <div class="tile t1">🎨<span>Gambar</span></div>
-              <div class="tile t2">📖<span>Cerita</span></div>
-              <div class="tile t3">🎵<span>Musik</span></div>
-              <div class="tile t4">🎮<span>Game</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="float f1">⭐ Karya baru!</div>
-        <div class="float f2">🏆 Lencana: Pencerita</div>
-      </div>
-    </div>
-  </section>
+  <div class="wrap">
+    <p class="eyebrow">Explore</p>
+    <h1 class="title">Fresh launches on <em>Pons v2</em></h1>
+    <p class="sub">Every token here started as a single sentence. Find the next one — or <a href="create.html" style="color:var(--accent);font-weight:600">launch your own</a>.</p>
 
-  <!-- LOGO STRIP -->
-  <section class="strip">
-    <div class="container strip-inner">
-      <p>Dipercaya oleh sekolah & komunitas:</p>
-      <div class="strip-logos"><span>Sekolah Pelangi</span><span>Rumah Belajar</span><span>KidsLab</span><span>Taman Ilmu</span><span>Komunitas Ayah Bunda</span></div>
+    <div class="stats">
+      <div class="stat"><small>Tokens launched</small><b id="sTokens">—</b></div>
+      <div class="stat"><small>Total market cap</small><b id="sMcap">—</b></div>
+      <div class="stat"><small>Graduated</small><b id="sGrad">—</b></div>
     </div>
-  </section>
 
-  <!-- FEATURES -->
-  <section id="fitur" class="section">
-    <div class="container">
-      <div class="section-head reveal">
-        <span class="eyebrow">Fitur</span>
-        <h2>Semua yang dibutuhkan si kecil untuk berkarya</h2>
-        <p>Alat kreatif yang ramah anak, dirancang bersama pendidik dan psikolog anak.</p>
-      </div>
-      <div class="grid-3">
-        <article class="card reveal" style="--c:var(--coral)"><div class="ic">🎨</div><h3>Studio Gambar</h3><p>Kuas, stiker, dan warna tanpa batas. Karya otomatis tersimpan di galeri keluarga.</p></article>
-        <article class="card reveal" style="--c:var(--sky)"><div class="ic">📖</div><h3>Studio Cerita</h3><p>Anak menyusun cerita bergambar sendiri, lalu membacakannya dengan rekaman suara.</p></article>
-        <article class="card reveal" style="--c:var(--sun)"><div class="ic">🎵</div><h3>Pembuat Musik</h3><p>Ketuk, susun, dan mainkan melodi. Belajar ritme dan nada sambil bermain.</p></article>
-        <article class="card reveal" style="--c:var(--mint)"><div class="ic">🎮</div><h3>Game Builder</h3><p>Pengenalan logika & coding lewat blok warna-warni — buat game pertamamu dalam 10 menit.</p></article>
-        <article class="card reveal" style="--c:var(--grape)"><div class="ic">🏅</div><h3>Tantangan Mingguan</h3><p>Tema baru tiap minggu memancing ide segar dan memberi lencana penghargaan.</p></article>
-        <article class="card reveal" style="--c:var(--coral)"><div class="ic">🛡️</div><h3>Aman Sejak Awal</h3><p>Tanpa iklan, tanpa obrolan dengan orang asing. Semua karya dibagikan hanya ke keluarga.</p></article>
+    <div class="toolbar">
+      <input class="input" id="q" placeholder="Search name or ticker…">
+      <div class="tabs" id="sort">
+        <button data-s="trending" class="on">Trending</button>
+        <button data-s="new">New</button>
+        <button data-s="mcap">Market cap</button>
+        <button data-s="mine">Mine</button>
       </div>
     </div>
-  </section>
 
-  <!-- HOW IT WORKS -->
-  <section id="cara" class="section alt">
-    <div class="container">
-      <div class="section-head reveal">
-        <span class="eyebrow">Cara Kerja</span>
-        <h2>Mulai dalam tiga langkah mudah</h2>
-      </div>
-      <div class="steps">
-        <div class="step reveal"><div class="num">1</div><h3>Buat akun keluarga</h3><p>Orang tua mendaftar dan menambahkan profil untuk setiap anak.</p></div>
-        <div class="step reveal"><div class="num">2</div><h3>Anak mulai berkarya</h3><p>Pilih studio, ikuti panduan maskot Scoty, dan wujudkan ide.</p></div>
-        <div class="step reveal"><div class="num">3</div><h3>Rayakan bersama</h3><p>Lihat galeri, beri reaksi, dan cetak karya favorit menjadi buku.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- PARENTS -->
-  <section id="orangtua" class="section">
-    <div class="container split">
-      <div class="split-visual reveal">
-        <div class="dash">
-          <div class="dash-head"><strong>Dasbor Orang Tua</strong><span>Minggu ini</span></div>
-          <div class="dash-row"><span>👧 Alya</span><div class="bar"><i style="width:78%"></i></div><b>7 karya</b></div>
-          <div class="dash-row"><span>👦 Bima</span><div class="bar"><i style="width:52%;background:var(--sky)"></i></div><b>4 karya</b></div>
-          <div class="dash-stats">
-            <div><b>3j 20m</b><small>Waktu kreatif</small></div>
-            <div><b>5</b><small>Lencana baru</small></div>
-            <div><b>45m</b><small>Batas harian</small></div>
-          </div>
-        </div>
-      </div>
-      <div class="split-text reveal">
-        <span class="eyebrow">Untuk Orang Tua</span>
-        <h2>Kendali penuh, tanpa harus mengawasi setiap detik</h2>
-        <ul class="checks">
-          <li>Atur batas waktu layar harian per anak</li>
-          <li>Laporan perkembangan kreativitas mingguan</li>
-          <li>Persetujuan sebelum karya dibagikan</li>
-          <li>Data terenkripsi dan tidak pernah dijual</li>
-        </ul>
-        <a href="#mulai" class="btn btn-primary">Daftar sebagai Orang Tua</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- TESTIMONIALS -->
-  <section class="section alt">
-    <div class="container">
-      <div class="section-head reveal">
-        <span class="eyebrow">Cerita Keluarga</span>
-        <h2>Kata mereka tentang SCOTY</h2>
-      </div>
-      <div class="grid-3">
-        <blockquote class="quote reveal"><p>“Anak saya yang pemalu sekarang bangga membacakan cerita buatannya sendiri saat makan malam.”</p><footer>— Rina, ibu dari 2 anak</footer></blockquote>
-        <blockquote class="quote reveal"><p>“Akhirnya ada aplikasi tanpa iklan yang membuat waktu layar terasa bermanfaat.”</p><footer>— Dimas, ayah dari Kayla (8)</footer></blockquote>
-        <blockquote class="quote reveal"><p>“Kami pakai Game Builder di kelas. Murid jadi paham logika dasar tanpa merasa belajar.”</p><footer>— Bu Sari, guru SD</footer></blockquote>
-      </div>
-    </div>
-  </section>
-
-  <!-- PRICING -->
-  <section id="harga" class="section">
-    <div class="container">
-      <div class="section-head reveal">
-        <span class="eyebrow">Harga</span>
-        <h2>Paket sederhana untuk setiap keluarga</h2>
-        <div class="toggle" id="billing"><button class="on" data-p="m">Bulanan</button><button data-p="y">Tahunan <em>-20%</em></button></div>
-      </div>
-      <div class="pricing">
-        <div class="plan reveal">
-          <h3>Gratis</h3><p class="price"><b>Rp0</b></p>
-          <ul><li>1 profil anak</li><li>Studio Gambar & Cerita</li><li>Galeri 20 karya</li></ul>
-          <a href="#mulai" class="btn btn-outline">Mulai Gratis</a>
-        </div>
-        <div class="plan featured reveal">
-          <span class="badge">Paling Populer</span>
-          <h3>Keluarga</h3><p class="price"><b data-m="Rp49rb" data-y="Rp39rb">Rp49rb</b>/bulan</p>
-          <ul><li>Hingga 4 profil anak</li><li>Semua studio kreatif</li><li>Galeri tanpa batas</li><li>Dasbor orang tua lengkap</li></ul>
-          <a href="#mulai" class="btn btn-primary">Coba 14 Hari Gratis</a>
-        </div>
-        <div class="plan reveal">
-          <h3>Sekolah</h3><p class="price"><b>Hubungi</b></p>
-          <ul><li>Akun kelas & guru</li><li>Kurikulum kreatif</li><li>Pelatihan & dukungan</li></ul>
-          <a href="mailto:halo@scoty.id" class="btn btn-outline">Hubungi Kami</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FAQ -->
-  <section id="faq" class="section alt">
-    <div class="container narrow">
-      <div class="section-head reveal"><span class="eyebrow">FAQ</span><h2>Pertanyaan yang sering diajukan</h2></div>
-      <details class="reveal"><summary>Untuk usia berapa SCOTY cocok?</summary><p>SCOTY dirancang untuk anak usia 5–12 tahun, dengan tingkat kesulitan yang menyesuaikan usia di profil.</p></details>
-      <details class="reveal"><summary>Apakah SCOTY aman untuk anak?</summary><p>Ya. Tidak ada iklan, tidak ada obrolan publik, dan semua karya hanya dapat dilihat oleh anggota keluarga yang Anda izinkan.</p></details>
-      <details class="reveal"><summary>Perangkat apa yang didukung?</summary><p>SCOTY berjalan di browser, tablet Android, dan iPad. Progres tersinkron di semua perangkat.</p></details>
-      <details class="reveal"><summary>Bisakah saya berhenti berlangganan kapan saja?</summary><p>Tentu. Batalkan kapan saja dari pengaturan akun, karya anak tetap tersimpan di paket Gratis.</p></details>
-    </div>
-  </section>
-
-  <!-- CTA -->
-  <section id="mulai" class="cta">
-    <div class="container cta-inner reveal">
-      <h2>Siap memulai petualangan kreatif?</h2>
-      <p>Daftar gratis hari ini. Tidak perlu kartu kredit.</p>
-      <form class="cta-form" id="ctaForm">
-        <input type="email" placeholder="Email orang tua" required aria-label="Email orang tua">
-        <button class="btn btn-dark" type="submit">Daftar Gratis</button>
-      </form>
-      <p class="form-msg" id="formMsg" hidden>🎉 Terima kasih! Cek email Anda untuk langkah selanjutnya.</p>
-    </div>
-  </section>
+    <div class="tokens" id="tokens"></div>
+  </div>
 </main>
 
-<footer class="footer">
-  <div class="container foot-grid">
-    <div>
-      <a href="#" class="logo"><span class="logo-mark">S</span>SCOTY</a>
-      <p>Ruang kreatif yang aman untuk anak dan keluarga.</p>
-    </div>
-    <div><h4>Produk</h4><a href="#fitur">Fitur</a><a href="#harga">Harga</a><a href="#">Untuk Sekolah</a></div>
-    <div><h4>Perusahaan</h4><a href="#">Tentang</a><a href="#">Blog</a><a href="#">Karier</a></div>
-    <div><h4>Bantuan</h4><a href="#faq">FAQ</a><a href="#">Privasi</a><a href="mailto:halo@scoty.id">halo@scoty.id</a></div>
-  </div>
-  <div class="container copy">© <span id="yr"></span> SCOTY. Dibuat dengan ❤️ untuk keluarga.</div>
-</footer>
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 
-<script src="script.js"></script>
+<div id="footer"></div>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/explore.js"></script>
 </body>
 </html>
