@@ -16,6 +16,7 @@
     <nav class="menu">
       <a href="index.html" class="${page === "explore" ? "on" : ""}">Explore</a>
       <a href="create.html" class="${page === "create" ? "on" : ""}">Create</a>
+      <a href="profile.html" class="${page === "profile" ? "on" : ""}">Profile</a>
     </nav>
     <button class="wallet" id="walletBtn"><span class="dot"></span><span id="walletLbl">Connect Wallet</span></button>
   </div></header>`;
@@ -24,7 +25,7 @@
   <footer class="foot">
     <a href="index.html" class="brand"><img class="brand-mark" src="assets/logo.png" alt="">SCOTY</a>
     <p>Launch and explore tokens on ${CFG.network}. Your wallet signs every transaction. SCOTY never takes custody of your assets.</p>
-    <div class="foot-links"><a href="index.html">Explore</a><a href="create.html">Create</a><a href="#">Docs</a><a href="#">Privacy Policy</a><a href="#">Terms of Use</a></div>
+    <div class="foot-links"><a href="index.html">Explore</a><a href="create.html">Create</a><a href="profile.html">Profile</a><a href="#">Docs</a><a href="#">Privacy Policy</a><a href="#">Terms of Use</a></div>
     <p class="fine">SCOTY is a non-custodial, third-party interface to token launch protocols on ${CFG.network}. Transactions may be irreversible and tokens can lose all value. SCOTY provides no custody, warranties, or financial advice.</p>
     <div class="foot-bot"><span>© ${new Date().getFullYear()} SCOTY</span><span>@scoty</span></div>
   </footer>`;
@@ -158,6 +159,7 @@
   // account menu when connected
   document.body.insertAdjacentHTML("beforeend", `<div class="wmenu" id="wmenu">
     <div class="wmenu-h" id="wmenuH"></div>
+    <a href="profile.html">My profile</a>
     <button type="button" id="wCopy">Copy address</button>
     <a id="wExplorer" target="_blank" rel="noopener">View on explorer ↗</a>
     <button type="button" id="wSwitch">Switch to ${CFG.network}</button>

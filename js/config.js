@@ -22,6 +22,7 @@ window.SCOTY_CONFIG = {
       explorerApi: "https://robinhoodchain.blockscout.com/api/v2",
       factory: "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e", // Pons V2 launch factory
       launchConfigId: 0,
+      feeEscrow: "0xd3AFEB2a57f70eF218Aa82451c51B2fb0416Ac9e", // Pons V2 creator-fee escrow
     },
   ],
 
@@ -36,6 +37,12 @@ window.SCOTY_CONFIG = {
     "function canLaunch(address launcher) view returns (bool)",
     "function previewLaunchEconomics(uint256 launchConfigId, address pairToken) view returns (bytes32)",
     "function launchToken((string name,string symbol,string logo,string description,(string twitter,string telegram,string discord,string website,string farcaster) socials,address creatorFeeRecipient,uint16 creatorTaxBps,bool buybackEnabled,bytes32 expectedEconomics,bytes32 salt) params, uint256 launchConfigId, address pairToken, address[] snipeTaxExemptions) payable returns (address token, address curve)",
+  ],
+
+  // Pons V2 fee escrow: creator fees accrue here per recipient wallet
+  feeEscrowAbi: [
+    "function balanceOf(address recipient) view returns (uint256)",
+    "function claim(uint256 amount) returns (uint256 claimed)",
   ],
 
   // Wallets offered in the connect dialog when they are not installed

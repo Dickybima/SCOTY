@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile — SCOTY</title>
+<meta name="description" content="Your SCOTY profile: creator fees, portfolio and launches.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#000000">
+<meta property="og:image" content="assets/logo.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="profile">
+<div id="nav"></div>
+
+<main>
+  <div class="narrow" id="profile">
+    <!-- not connected -->
+    <section class="panel center" id="gate" hidden>
+      <img src="assets/logo.png" alt="" class="gate-logo">
+      <h2>Connect your wallet</h2>
+      <p class="sub" style="margin:8px auto 20px">Your profile shows your creator fees, portfolio and every token you launched on SCOTY.</p>
+      <button class="btn btn-main" id="gateBtn" type="button">Connect Wallet</button>
+    </section>
+
+    <div id="content" hidden>
+      <!-- identity -->
+      <section class="panel">
+        <div class="ident">
+          <div class="avatar" id="avatar"></div>
+          <div class="ident-txt">
+            <h1 class="addr-big" id="addr"></h1>
+            <p class="status" style="margin:2px 0 0" id="who">Your SCOTY profile</p>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn btn-sm" id="copyAddr" type="button">Copy address</button>
+          <button class="btn btn-sm" id="share" type="button">Share</button>
+          <a class="btn btn-sm" id="explorerLink" target="_blank" rel="noopener">Explorer ↗</a>
+          <button class="btn btn-sm danger" id="disc" type="button">Disconnect</button>
+        </div>
+      </section>
+
+      <!-- creator fees -->
+      <section class="panel" id="feesPanel">
+        <div class="step-h"><span class="ic">◎</span><h3>Creator fees ready to claim</h3></div>
+        <div class="bigbox">
+          <b class="big mono" id="feeEth">—</b>
+          <small id="feeUsd">Across every launch paid to your wallet</small>
+        </div>
+        <button class="btn btn-main wide" id="claim" type="button" disabled>Claim creator fees</button>
+        <p class="status" id="claimStatus"></p>
+      </section>
+
+      <!-- portfolio -->
+      <section class="panel">
+        <small class="muted">Portfolio balance</small>
+        <b class="big" id="pfUsd">—</b>
+        <small class="muted" id="pfEth">—</small>
+      </section>
+
+      <!-- tabs -->
+      <section class="panel flush">
+        <div class="ptabs" id="ptabs">
+          <button data-t="positions" class="on" type="button">Positions</button>
+          <button data-t="launches" type="button">Launches</button>
+        </div>
+        <div class="pbody" id="pbody"><div class="empty">Loading…</div></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+
+<div id="footer"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/profile.js"></script>
+</body>
+</html>

@@ -3,6 +3,7 @@
 Token launchpad on **Pons v2** (Robinhood Chain, chain ID 4663) — "Type it. Launch it."
 
 - `index.html` — **Explore**: browse launched tokens (search, Trending / New / Market cap / Mine).
+- `profile.html` — **Profile**: connected wallet's creator fees (claimable from the Pons V2 fee escrow), portfolio balance, token positions and SCOTY launches. Share a public profile with `profile.html?address=0x…`.
 - `create.html` — **Create**: describe an idea → generate name, ticker, description & logo → pick chain → deploy with your wallet.
 
 Static site, no build step. Run locally:

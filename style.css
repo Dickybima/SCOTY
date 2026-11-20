@@ -10,6 +10,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
 body{font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.55;overflow-x:hidden;min-height:100vh;display:flex;flex-direction:column}
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:radial-gradient(600px 420px at 92% -5%,rgba(190,253,8,.13),transparent 70%),
@@ -170,3 +171,43 @@ label.lbl{display:block;font-size:.82rem;font-weight:600;color:var(--muted);marg
   .tabs button{flex:1;white-space:nowrap;padding:8px 6px;font-size:.9rem}
   main{padding-top:32px}
 }
+
+/* profile */
+.center{text-align:center}
+.gate-logo{width:84px;height:84px;border-radius:20px;margin-bottom:14px}
+.ident{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+.avatar{width:60px;height:60px;border-radius:16px;overflow:hidden;flex:none;border:1px solid var(--line2)}
+.avatar svg{width:100%;height:100%;display:block}
+.ident-txt{min-width:0}
+.addr-big{font-family:var(--mono);font-size:clamp(.95rem,2.6vw,1.45rem);font-weight:700;word-break:break-all;line-height:1.25}
+.btn.danger{color:var(--bad);border-color:rgba(255,92,92,.4)}
+.btn.danger:hover{border-color:var(--bad)}
+.step-h .ic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--card2);border:1px solid var(--line2);color:var(--accent)}
+.bigbox{border:1px solid var(--line2);background:#0a0a0a;border-radius:14px;padding:16px 18px;margin-bottom:14px}
+.big{display:block;font-family:"Space Grotesk";font-size:2.1rem;font-weight:700;line-height:1.15;margin:4px 0}
+.bigbox .big{font-size:1.6rem;color:var(--accent)}
+.mono{font-family:var(--mono)}
+.muted,.bigbox small{color:var(--muted);font-size:.9rem}
+.wide{width:100%}
+.panel.flush{padding:0;overflow:hidden}
+.ptabs{display:flex;gap:24px;padding:0 24px;border-bottom:1px solid var(--line)}
+.ptabs button{border:0;background:none;padding:16px 0 12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.ptabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.pbody{padding:20px 24px 24px}
+.pbody .empty{border:0;padding:32px 0}
+.plist{display:grid;gap:8px}
+.prow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#0a0a0a;transition:border-color .2s}
+.prow:hover{border-color:var(--accent)}
+.prow .logo{width:40px;height:40px;border-radius:12px;flex:none}
+.prow-main{flex:1;min-width:0}
+.prow-main b{display:block}
+.prow-main small{color:var(--soft);font-family:var(--mono)}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.lcard{border:1px solid var(--line);border-radius:16px;background:#0a0a0a;overflow:hidden;cursor:pointer;text-align:left;padding:0;transition:border-color .2s,transform .2s}
+.lcard:hover{border-color:var(--accent);transform:translateY(-2px)}
+.lcard-img{aspect-ratio:1;overflow:hidden}
+.lcard-img img,.lcard-img svg{width:100%;height:100%;display:block;object-fit:cover}
+.lcard-txt{padding:12px 14px}
+.lcard-txt b{display:block;font-family:"Space Grotesk";font-size:1.05rem}
+.lcard-txt small{display:block;color:var(--soft);font-family:var(--mono);font-size:.78rem}
+.lcard-txt .mono{display:block;font-size:.78rem;color:var(--accent);margin-top:6px}
