@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docs — SCOTY</title>
+<meta name="description" content="How SCOTY works: describe a token in one sentence, review the package, and launch it on ponsfamily.com with your own wallet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#000000">
+<meta property="og:image" content="assets/logo.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="docs">
+<div id="nav"></div>
+
+<main>
+  <div class="wrap docs">
+    <header class="docs-head">
+      <p class="eyebrow">Docs</p>
+      <h1 class="title">How <em>SCOTY</em> works</h1>
+      <p class="lead">SCOTY is a one-sentence launchpad. You describe a token in one line, SCOTY drafts a complete, launch-ready package, and you deploy it to the <a class="link" href="https://ponsfamily.com" target="_blank" rel="noopener">ponsfamily.com</a> protocol on Robinhood Chain in one click. Every transaction is signed by your own wallet. SCOTY never holds your funds or keys.</p>
+    </header>
+
+    <div class="docs-grid">
+      <nav class="toc" aria-label="On this page">
+        <small>On this page</small>
+        <a href="#overview">Overview</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#launches">How launches work</a>
+        <a href="#pairs">Quote pairs</a>
+        <a href="#images">Token images</a>
+        <a href="#fees">Fees</a>
+        <a href="#wallet">Wallet</a>
+        <a href="#profile">Profile &amp; creator fees</a>
+        <a href="#safety">Safety</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+
+      <div class="docs-body">
+        <section id="overview" class="panel">
+          <h2>Overview</h2>
+          <p>Launching a token usually means writing a contract, wiring liquidity, drawing a logo, and writing all the copy. SCOTY collapses that into three steps: <b>describe, review, deploy</b>. SCOTY handles the creative and configuration work; the chain and your wallet handle settlement.</p>
+        </section>
+
+        <section id="how-it-works" class="panel">
+          <h2>How it works</h2>
+          <ol class="steps">
+            <li><span class="num">01</span><div><h3>Pitch it in a line</h3><p>Type one sentence describing your idea, or hit <b>Roulette</b> for a random one. That is the only required input.</p></div></li>
+            <li><span class="num">02</span><div><h3>SCOTY drafts the package</h3><p>You get a name, ticker, logo and description — ready to deploy.</p></div></li>
+            <li><span class="num">03</span><div><h3>Review and edit</h3><p>Everything is editable: tweak the name, ticker, description, image (generate a new look or upload your own) and socials.</p></div></li>
+            <li><span class="num">04</span><div><h3>Deploy to ponsfamily.com</h3><p>One signed transaction from your wallet launches the token straight onto the ponsfamily.com protocol. It then shows up in <a class="link" href="index.html">Explore</a> and on your <a class="link" href="profile.html">Profile</a>.</p></div></li>
+          </ol>
+        </section>
+
+        <section id="launches" class="panel">
+          <h2>How launches work</h2>
+          <p>Every launch on SCOTY goes through the ponsfamily.com launch factory on Robinhood Chain in one transaction — there are no versions or settings to choose.</p>
+          <div class="cards2">
+            <div class="mini">
+              <div class="mini-h"><b>One signed transaction</b><span class="pill">ponsfamily.com · Robinhood Chain</span></div>
+              <ul>
+                <li>Creates your token with its own bonding curve</li>
+                <li>Price follows the curve as people buy and sell</li>
+                <li>When the curve completes, the token graduates into a Uniswap v4 pool</li>
+                <li>Graduated liquidity is permanently locked</li>
+                <li>Tradable straight away</li>
+              </ul>
+            </div>
+            <div class="mini">
+              <div class="mini-h"><b>Transparent cost</b><span class="pill">ETH</span></div>
+              <ul>
+                <li>Launch fee is read live from the factory at deploy time</li>
+                <li>Gas is paid in ETH (Robinhood Chain's native currency)</li>
+                <li>A short anti-snipe tax protects the first seconds of trading</li>
+                <li>Non-custodial: your wallet signs everything</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="pairs" class="panel">
+          <h2>Quote pairs</h2>
+          <p>Tokens launched on SCOTY are quoted in native <b>ETH</b>. The ponsfamily.com protocol can also support other pair assets that its factory approves on-chain; SCOTY uses ETH so every launch works the same way.</p>
+        </section>
+
+        <section id="images" class="panel">
+          <h2>Token images</h2>
+          <p>Alongside the text package, SCOTY generates a clean logo mark for your token. Hit <b>New look</b> to generate another one on demand, or upload your own image. Uploaded images are resized to keep on-chain storage cheap. The generated mark is deterministic, so the studio always works end to end.</p>
+        </section>
+
+        <section id="fees" class="panel">
+          <h2>Fees</h2>
+          <p>Launching costs the ponsfamily.com launch fee, read live from the factory at deploy time and shown in the studio before you sign. SCOTY itself does not add a surcharge — you only pay that protocol fee and network gas (in ETH).</p>
+        </section>
+
+        <section id="wallet" class="panel">
+          <h2>Connecting a wallet</h2>
+          <p>Click <b>Connect Wallet</b> and pick your wallet. Any browser wallet works out of the box — MetaMask, Rabby, OKX, Coinbase Wallet, Trust Wallet, Phantom and more are detected automatically. On mobile, open SCOTY inside your wallet app's browser. SCOTY is non-custodial: connecting only shares your public address so transactions can be built for you to sign.</p>
+        </section>
+
+        <section id="profile" class="panel">
+          <h2>Profile &amp; creator fees</h2>
+          <p>Every token you launch pays creator fees to your wallet. Your <a class="link" href="profile.html">Profile</a> shows fees ready to claim, your portfolio balance, your positions and every token you launched on SCOTY. Claim your fees in one click; share your profile with the <b>Share</b> button.</p>
+        </section>
+
+        <section id="safety" class="panel">
+          <h2>Safety &amp; non-custodial</h2>
+          <p>SCOTY is a third-party interface to ponsfamily.com, not an official ponsfamily.com product. It never takes custody of assets, and never sees your private keys or seed phrase. Transactions are irreversible once signed, and tokens can be highly volatile or lose all value. Nothing here is financial advice — do your own research.</p>
+        </section>
+
+        <section id="faq" class="panel">
+          <h2>FAQ</h2>
+          <details><summary>Do I need to code?</summary><p>No. Type one sentence, review the package, and sign one transaction. SCOTY builds everything else.</p></details>
+          <details><summary>Does SCOTY hold my tokens or funds?</summary><p>No. SCOTY is non-custodial. Your wallet signs every transaction and your tokens and fees go straight to your wallet.</p></details>
+          <details><summary>Which chain is this?</summary><p>Robinhood Chain (chain ID 4663). Gas is paid in ETH. SCOTY will prompt your wallet to add or switch to it automatically.</p></details>
+          <details><summary>Can I edit what SCOTY generates?</summary><p>Yes. The name, ticker, description, image and socials are all editable before you launch.</p></details>
+        </section>
+
+        <div class="row docs-cta">
+          <a class="btn btn-main" href="create.html">Open the studio →</a>
+          <a class="btn" href="index.html">Explore launches</a>
+          <a class="btn" href="profile.html">View profile</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="footer"></div>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+</body>
+</html>
