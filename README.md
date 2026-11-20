@@ -1,6 +1,6 @@
 # SCOTY
 
-Token launchpad on **Pons v2** — "Type it. Launch it."
+Token launchpad on **Pons v2** (Robinhood Chain, chain ID 4663) — "Type it. Launch it."
 
 - `index.html` — **Explore**: browse launched tokens (search, Trending / New / Market cap / Mine).
 - `create.html` — **Create**: describe an idea → generate name, ticker, description & logo → pick chain → deploy with your wallet.
@@ -14,7 +14,7 @@ python3 -m http.server 8000
 ## Connecting Pons v2
 
 Edit `js/config.js`:
-- `chains[].factory` — Pons v2 factory contract address per chain
+- `chains[].factory` — Pons v2 launch factory address (Robinhood Chain mainnet 4663 / testnet 46630)
 - `factoryAbi` — the real `createToken` signature and `TokenCreated` event
 - `launchFee` — native value sent with the create call
 
