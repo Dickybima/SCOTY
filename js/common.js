@@ -17,6 +17,7 @@
       <a href="index.html" class="${page === "explore" ? "on" : ""}">Explore</a>
       <a href="create.html" class="${page === "create" ? "on" : ""}">Create</a>
       <a href="profile.html" class="${page === "profile" ? "on" : ""}">Profile</a>
+      <a href="docs.html" class="${page === "docs" ? "on" : ""}">Docs</a>
     </nav>
     <button class="wallet" id="walletBtn"><span class="dot"></span><span id="walletLbl">Connect Wallet</span></button>
   </div></header>`;
