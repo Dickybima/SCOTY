@@ -102,7 +102,7 @@
   }
   function renderDemo() {
     $("demoNote").innerHTML = state.chain.factory
-      ? `<span class="live">● LIVE on ${esc(state.chain.name)} — every launch is on-chain instantly</span>`
+      ? ""
       : `<span class="demo">DEMO MODE — no launch contract configured for ${esc(state.chain.name)}; launches are simulated locally</span>`;
   }
   W.onChange(renderSummary);

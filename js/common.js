@@ -205,13 +205,14 @@
     const h = hash(seed || "scoty");
     const a = h % 360, b = (a + 40 + (h >> 8) % 80) % 360;
     const shapes = ["circle", "rect", "blob"][(h >> 4) % 3];
-    const glyph = (text || "?").replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase() || "?";
+    const glyph = (text || "?").replace(/[^A-Za-z0-9]/g, "").slice(0, 5).toUpperCase() || "?";
+    const fs = [44, 44, 44, 36, 28, 23][glyph.length];
     const deco = shapes === "circle"
       ? `<circle cx="${30 + (h % 40)}" cy="${30 + ((h >> 3) % 40)}" r="34" fill="#fff" opacity=".18"/>`
       : shapes === "rect"
       ? `<rect x="-10" y="58" width="140" height="60" transform="rotate(-18 60 60)" fill="#fff" opacity=".16"/>`
       : `<path d="M10 90 Q40 40 70 70 T130 40 V130 H-10Z" fill="#fff" opacity=".18"/>`;
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g${h}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${a} 85% 60%)"/><stop offset="1" stop-color="hsl(${b} 85% 52%)"/></linearGradient></defs><rect width="120" height="120" fill="url(#g${h})"/>${deco}<text x="60" y="74" text-anchor="middle" font-family="Space Grotesk,Arial,sans-serif" font-weight="700" font-size="40" fill="#fff">${glyph}</text></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g${h}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${a} 85% 60%)"/><stop offset="1" stop-color="hsl(${b} 85% 52%)"/></linearGradient></defs><rect width="120" height="120" fill="url(#g${h})"/>${deco}<text x="60" y="${Math.round(60 + fs * 0.36)}" text-anchor="middle" font-family="Space Grotesk,Arial,sans-serif" font-weight="700" font-size="${fs}" letter-spacing="-0.5" fill="#fff">${glyph}</text></svg>`;
   }
   const logoHTML = (t) => (t.image ? `<img src="${t.image}" alt="">` : logoSVG(t.symbol + t.name, t.symbol));
 
