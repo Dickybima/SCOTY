@@ -25,6 +25,10 @@ window.SCOTY_CONFIG = {
     },
   ],
 
+  // On-chain marker: every launch from this site starts its salt with these bytes
+  // ("SCOTY" in hex). Explore only lists launches carrying this marker.
+  launchTag: "0x53434f5459",
+
   // Pons V2 launch factory (subset used by SCOTY)
   factoryAbi: [
     "function launchFee() view returns (uint256)",

@@ -4,58 +4,78 @@
   const chain = CFG.chains[0];
 
   let sort = "new";
-  let onchain = [];          // launches read from the Pons V2 factory
+  let onchain = [];          // SCOTY launches read from chain
   let loading = !!chain.factory;
   let feedError = false;
 
-  // ── On-chain feed (Blockscout API for the Pons V2 factory) ──
+  // ── On-chain feed: ONLY launches made through SCOTY ─────────
+  // Every SCOTY launch calls the factory's launchToken with a salt that
+  // starts with CFG.launchTag. We scan the factory's incoming transactions
+  // (Blockscout API), decode their input and keep the tagged ones.
   async function getJSON(url) {
     const r = await fetch(url, { headers: { accept: "application/json" } });
     if (!r.ok) throw new Error(r.status);
     return r.json();
   }
 
-  function tokenFromLog(log) {
-    const params = log.decoded && log.decoded.parameters;
-    if (params) {
-      const p = params.find((x) => x.type === "address" && /token/i.test(x.name) && !/pair|quote/i.test(x.name));
-      if (p) {
-        const creator = params.find((x) => x.type === "address" && /creator|launcher|deployer|sender/i.test(x.name));
-        return { address: p.value, creator: creator && creator.value };
+  const MAX_PAGES = 20; // ~1000 most recent factory txs
+  const TAG = CFG.launchTag.toLowerCase();
+  const TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+  const ZERO_TOPIC = "0x" + "0".repeat(64);
+  const safeImg = (u) => (typeof u === "string" && /^(data:image\/(png|jpe?g|webp|gif|svg\+xml)[;,]|https:\/\/)/i.test(u) ? u : null);
+
+  async function scotyLaunchTxs() {
+    const iface = new ethers.Interface(CFG.factoryAbi);
+    const selector = iface.getFunction("launchToken").selector;
+    const found = [];
+    let params = "";
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const data = await getJSON(`${chain.explorerApi}/addresses/${chain.factory}/transactions?filter=to${params}`);
+      for (const tx of data.items || []) {
+        if (tx.status && tx.status !== "ok") continue;
+        let input = tx.raw_input;
+        if (input === undefined) {
+          if (tx.method && !/launchToken|a72101af/i.test(tx.method)) continue;
+          input = (await getJSON(`${chain.explorerApi}/transactions/${tx.hash}`).catch(() => ({}))).raw_input;
+        }
+        if (!input || !input.toLowerCase().startsWith(selector)) continue;
+        let p;
+        try { p = iface.parseTransaction({ data: input }).args[0]; } catch (_) { continue; }
+        if (!p.salt.toLowerCase().startsWith(TAG)) continue; // not launched via SCOTY
+        found.push({ tx, p });
       }
-      return null; // decoded but not a launch event
+      const next = data.next_page_params;
+      if (!next) break;
+      params = "&" + new URLSearchParams(next).toString();
     }
-    return null;
+    return found;
+  }
+
+  async function tokenAddressOf(hash) {
+    const logs = await getJSON(`${chain.explorerApi}/transactions/${hash}/logs`);
+    const mint = (logs.items || []).find((l) => l.topics && l.topics[0] === TRANSFER && l.topics[1] === ZERO_TOPIC);
+    return mint && (mint.address.hash || mint.address);
   }
 
   async function loadFeed() {
-    if (!chain.factory || !chain.explorerApi) return;
+    if (!chain.factory || !chain.explorerApi || !window.ethers) { loading = false; stats(); render(); return; }
     try {
-      const data = await getJSON(`${chain.explorerApi}/addresses/${chain.factory}/logs`);
-      const seen = new Set();
-      const launches = [];
-      for (const log of data.items || []) {
-        const t = tokenFromLog(log);
-        if (!t || seen.has(t.address.toLowerCase())) continue;
-        seen.add(t.address.toLowerCase());
-        launches.push({ ...t, tx: log.transaction_hash || log.tx_hash, block: log.block_number });
-        if (launches.length >= 40) break;
-      }
-      onchain = await Promise.all(launches.map(async (l) => {
-        const [tok, tx] = await Promise.all([
-          getJSON(`${chain.explorerApi}/tokens/${l.address}`).catch(() => ({})),
-          l.tx ? getJSON(`${chain.explorerApi}/transactions/${l.tx}`).catch(() => ({})) : {},
-        ]);
+      const launches = await scotyLaunchTxs();
+      onchain = (await Promise.all(launches.map(async ({ tx, p }) => {
+        const address = await tokenAddressOf(tx.hash).catch(() => null);
+        if (!address) return null;
+        const tok = await getJSON(`${chain.explorerApi}/tokens/${address}`).catch(() => ({}));
         return {
-          name: tok.name || "Unknown", symbol: tok.symbol || "???",
-          description: "", image: tok.icon_url || null,
-          address: l.address, creator: l.creator || (tx.from && tx.from.hash), tx: l.tx,
+          name: p.name, symbol: p.symbol, description: p.description,
+          image: safeImg(p.logo), twitter: /^https:\/\//.test(p.socials.twitter) ? p.socials.twitter : null,
+          website: /^https:\/\//.test(p.socials.website) ? p.socials.website : null,
+          address, creator: (tx.from && (tx.from.hash || tx.from)) || p.creatorFeeRecipient, tx: tx.hash,
           createdAt: tx.timestamp ? Date.parse(tx.timestamp) : Date.now(),
           mcap: Number(tok.circulating_market_cap || 0) || (Number(tok.exchange_rate || 0) * Number(tok.total_supply || 0) / 10 ** Number(tok.decimals || 18)) || 0,
           holders: Number(tok.holders_count || tok.holders || 0),
           change: 0, progress: null, chain: chain.key,
         };
-      }));
+      }))).filter(Boolean);
     } catch (e) {
       console.warn("Explore feed unavailable", e);
       feedError = true;

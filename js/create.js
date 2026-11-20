@@ -172,7 +172,7 @@
           creatorTaxBps: 0,
           buybackEnabled: false,
           expectedEconomics: economics,
-          salt: ethers.hexlify(ethers.randomBytes(32)),
+          salt: ethers.concat([CFG.launchTag, ethers.randomBytes(32 - ethers.getBytes(CFG.launchTag).length)]), // SCOTY marker + random
         };
         const args = [params, chain.launchConfigId, ZERO, []];
         // simulate first: catches reverts and returns the new token address
