@@ -11,7 +11,7 @@
   // ── Layout ──────────────────────────────────────────────────
   document.getElementById("nav").outerHTML = `
   <header class="nav"><div class="wrap nav-in">
-    <a href="index.html" class="brand"><span class="brand-mark">S</span>SCOTY</a>
+    <a href="index.html" class="brand"><img class="brand-mark" src="assets/logo.png" alt="">SCOTY</a>
     <span class="tag">${CFG.network}</span>
     <nav class="menu">
       <a href="index.html" class="${page === "explore" ? "on" : ""}">Explore</a>
@@ -22,7 +22,7 @@
 
   document.getElementById("footer").outerHTML = `
   <footer class="foot">
-    <a href="index.html" class="brand"><span class="brand-mark">S</span>SCOTY</a>
+    <a href="index.html" class="brand"><img class="brand-mark" src="assets/logo.png" alt="">SCOTY</a>
     <p>Launch and explore tokens on ${CFG.network}. Your wallet signs every transaction. SCOTY never takes custody of your assets.</p>
     <div class="foot-links"><a href="index.html">Explore</a><a href="create.html">Create</a><a href="#">Docs</a><a href="#">Privacy Policy</a><a href="#">Terms of Use</a></div>
     <p class="fine">SCOTY is a non-custodial, third-party interface to token launch protocols on ${CFG.network}. Transactions may be irreversible and tokens can lose all value. SCOTY provides no custody, warranties, or financial advice.</p>
