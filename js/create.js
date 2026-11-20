@@ -30,7 +30,7 @@
     let symbol = core.length > 1 ? (core[0].slice(0, 3) + core[1].slice(0, 2)) : (core[0] || "SCOTY").slice(0, 5);
     symbol = symbol.toUpperCase().replace(/[^A-Z0-9]/g, "") || "SCOTY";
     const lines = [
-      `${name} is ${idea.replace(/^(a|an|the)\s+/i, "the ")}. Born on Pons v2 on Robinhood Chain, owned by the community.`,
+      `${name} is ${idea.replace(/^(a|an|the)\s+/i, "the ")}. Born on Robinhood Chain, owned by the community.`,
       `No team allocation, no presale — just ${name} and the people who believe in it.`,
     ];
     return { name, symbol, desc: lines.join(" ") };
@@ -96,13 +96,12 @@
     $("summary").innerHTML = `
       <div><span>Token  </span> ${esc($("name").value || "—")} ($${esc($("symbol").value || "—")})</div>
       <div><span>Network</span> ${esc(state.chain.name)}</div>
-      <div><span>Protocol</span> ${esc(CFG.protocol)}</div>
       <div><span>Creator</span> ${W.address ? short(W.address) : "connect wallet"}</div>`;
     $("deploy").textContent = W.address ? "🚀 Launch token" : "Connect wallet to launch";
   }
   function renderDemo() {
     $("demoNote").innerHTML = state.chain.factory ? "" :
-      `<span class="demo">DEMO MODE — no ${esc(CFG.protocol)} factory configured for ${esc(state.chain.name)}; launches are simulated locally</span>`;
+      `<span class="demo">DEMO MODE — no launch contract configured for ${esc(state.chain.name)}; launches are simulated locally</span>`;
   }
   W.onChange(renderSummary);
 

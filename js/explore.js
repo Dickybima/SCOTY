@@ -2,24 +2,8 @@
   const { CFG, Store, logoHTML, esc, fmtUsd, ago, short, hash } = window.SCOTY;
   const $ = (id) => document.getElementById(id);
 
-  // Sample tokens shown until a Pons v2 indexer/API is connected.
-  const now = Date.now(), H = 3600e3;
-  const SAMPLE = [
-    ["Couch Cat", "CCAT", "A cat that trades memes from the couch and never leaves the sofa.", 182000, 12.4, 64, 5],
-    ["Monday Frog", "MFROG", "Only buys the dip on Mondays. Strict schedule, zero exceptions.", 96500, -4.2, 41, 9],
-    ["Nap Panda", "NAPDA", "Stakes while it sleeps. Wakes up for green candles only.", 1240000, 33.1, 100, 30],
-    ["Orbit Pizza", "ZZA", "A slice of pepperoni orbiting the moon at 3,000 mph.", 54000, 8.8, 22, 2],
-    ["Rug Sweeper", "SWEEP", "A tiny robot that cleans up after rug pulls. Very busy.", 310000, -1.6, 77, 14],
-    ["Quack Pump", "QUACK", "Quacks every time the chart goes up. Loud ducks only.", 23800, 51.0, 9, 0.6],
-    ["Dev Brew", "BREW", "Coffee for devs shipping at 3am. Gas paid in caffeine.", 141000, 3.3, 58, 22],
-    ["Pixel Drake", "PXD", "An 8-bit dragon guarding the liquidity pool. Do not poke.", 670000, -7.9, 92, 48],
-  ].map(([name, symbol, description, mcap, change, progress, hrs]) => ({
-    name, symbol, description, mcap, change, progress, chain: CFG.chains[0].key,
-    createdAt: now - hrs * H,
-    address: "0x" + (hash(symbol).toString(16) + hash(name).toString(16) + hash(symbol + name).toString(16) + "0000000000").slice(0, 40),
-    creator: "0x" + (hash(name + "c").toString(16) + hash(symbol + "c").toString(16) + "00000000000000000000").slice(0, 40),
-    sample: true,
-  }));
+  // Real tokens come from a Robinhood Chain indexer/API (not connected yet).
+  const SAMPLE = [];
 
   let sort = "trending";
   const all = () => [...Store.all(), ...SAMPLE];
@@ -50,7 +34,7 @@
         <div class="meta"><span>MC ${fmtUsd(t.mcap)}</span><span class="${t.change >= 0 ? "up" : "down"}">${t.change >= 0 ? "▲" : "▼"} ${Math.abs(t.change).toFixed(1)}%</span></div>
         <div class="curve" title="Bonding curve ${t.progress}%"><i style="width:${Math.min(t.progress, 100)}%"></i></div>
       </button>`).join("")
-      : `<div class="empty">${sort === "mine" ? 'You haven\'t launched anything yet. <a href="create.html" style="color:var(--accent);font-weight:600">Create a token →</a>' : "No tokens match your search."}</div>`;
+      : `<div class="empty">${sort === "mine" ? 'You haven\'t launched anything yet. <a href="create.html" style="color:var(--accent);font-weight:600">Create a token →</a>' : (q ? "No tokens match your search." : 'No tokens yet. <a href="create.html" style="color:var(--accent);font-weight:600">Be the first to launch →</a>')}</div>`;
 
     $("tokens").querySelectorAll(".tok").forEach((b) => (b.onclick = () => open(l[+b.dataset.i])));
   }
@@ -72,8 +56,8 @@
       <div class="row">${t.sample || t.demo ? "" : link(`${chain.explorer}/token/${t.address}`, "Explorer ↗")}${link(t.twitter, "X ↗")}${link(t.website, "Website ↗")}
         <button class="btn btn-sm" id="copy">Copy address</button></div>
       <div class="trade">
-        <button class="btn btn-main" disabled title="Connect Pons v2 trading to enable">Buy</button>
-        <button class="btn btn-dark" disabled title="Connect Pons v2 trading to enable">Sell</button>
+        <button class="btn btn-main" disabled title="Trading not connected yet">Buy</button>
+        <button class="btn btn-dark" disabled title="Trading not connected yet">Sell</button>
       </div>
       ${t.sample ? '<p class="status">Sample token for preview.</p>' : t.demo ? '<p class="status">Demo launch — not on-chain.</p>' : ""}`;
     $("modal").classList.add("open");
