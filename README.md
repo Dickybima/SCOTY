@@ -33,8 +33,10 @@ Settings live in `js/config.js`. Factory interface source: [kickpadfamily/contra
 
 Pons stores a token logo on-chain as a string of at most 512 bytes, so uploaded images are hosted and only their URL goes on-chain. `api/upload.js` is a Vercel function that stores the image in **Vercel Blob**:
 
-1. Vercel dashboard → your project → **Storage** → **Create** → **Blob**, and connect it to the project (this adds `BLOB_READ_WRITE_TOKEN`).
-2. Redeploy.
+1. Vercel dashboard → your project → **Storage** → **Create** → **Blob** with **Public** access (logos must be publicly viewable).
+2. Connect it to the project for the **Production** environment (this adds `BLOB_READ_WRITE_TOKEN`; a custom prefix also works).
+3. Redeploy — environment variables only reach deployments made after they are added.
+4. Check `https://<your-domain>/api/upload` shows `"enabled": true`.
 
 Until that is done the Upload button tells creators to paste an image link instead.
 
