@@ -20,3 +20,7 @@ python3 -m http.server 8000
 - After launch the user is sent to **Explore**, which lists **only SCOTY launches**: it scans the factory's transactions via the Robinhood Chain Blockscout API, decodes `launchToken` input and keeps the ones whose salt carries the marker. Launches from this browser are shown instantly before indexing.
 
 Settings live in `js/config.js`. Factory interface source: [kickpadfamily/contract `IPonsV2.sol`](https://github.com/kickpadfamily/contract/blob/main/src/interfaces/IPonsV2.sol).
+
+## Intro preloader
+
+`js/preloader.js` shows the "Venom Vial" pixel-art intro (a vanilla-JS port of the `venom-vial-preloader` React component) the first time the site is opened in a browser session. The widow carries the SCOTY "S" on her back. Click, tap or press Enter to hurry it; add `?intro=1` to any URL to replay it.
