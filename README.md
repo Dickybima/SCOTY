@@ -23,4 +23,4 @@ Settings live in `js/config.js`. Factory interface source: [kickpadfamily/contra
 
 ## Intro preloader
 
-`js/preloader.js` shows the "Venom Vial" pixel-art intro (a vanilla-JS port of the `venom-vial-preloader` React component) the first time the site is opened in a browser session. The widow carries the SCOTY "S" on her back. Click, tap or press Enter to hurry it; add `?intro=1` to any URL to replay it.
+`js/preloader.js` shows the "Venom Vial" pixel-art intro (a vanilla-JS port of the `venom-vial-preloader` React component) the first time the site is opened in a browser session. The widow carries the SCOTY anchor logo on her back. Click, tap or press Enter to hurry it; add `?intro=1` to any URL to replay it.

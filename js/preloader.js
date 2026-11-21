@@ -2,7 +2,7 @@
 // (venom-vial-preloader.tsx) to plain JavaScript for this static site.
 //
 // A pixel-art phial fills with venom while a black widow — wearing the SCOTY
-// "S" on her back — wraps it in silk. At 100% the stopper pops, venom fog
+// anchor on her back — wraps it in silk. At 100% the stopper pops, venom fog
 // floods out and thins away onto the page. Click / Enter skips ahead.
 //
 // Shown once per browser session on first open. Add ?intro=1 to any URL to
@@ -40,20 +40,23 @@
     silk: "#eef7ef",
   };
 
-  // The SCOTY "S" drawn on the widow's back: # white letter, + lime drips.
+  // The SCOTY anchor drawn on the widow's back: # silver, + lime slime.
   var LOGO = [
-    "..####.",
-    ".##..##",
-    ".##....",
-    "..###..",
-    "....##.",
-    "##..##.",
-    ".####..",
-    "+..+.+.",
-    "+....+.",
-    "+......",
+    "....#....",
+    "...###...",
+    "....#....",
+    "..++#....",
+    "....#++..",
+    "..++#....",
+    "....#....",
+    "#...#...#",
+    "##..#..##",
+    ".##+#+##.",
+    "..#####..",
+    "...+.+...",
+    "...+.....",
   ];
-  var LOGO_W = 7, LOGO_H = LOGO.length;
+  var LOGO_W = 9, LOGO_H = LOGO.length;
 
   // ---- pure helpers (verbatim from the component) --------------------------------
   var VV_BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(function (v) { return (v + 0.5) / 16; });
@@ -222,7 +225,7 @@
     gloss: pk(vvShade(C.spider, 0.62)), leg: pk(vvShade(C.glass, -0.28)), knee: pk(vvShade(C.glass, 0.12)),
     mark: pk(C.mark), markD: pk(vvShade(C.mark, -0.4)), silk: pk(C.silk), silkDim: pk(vvShade(C.silk, -0.4)),
     digit: pk(vvShade(C.silk, 0.4)), digitLo: pk(vvShade(C.glass, 0.25)), shadow: pk(vvShade(C.void, 0.14)),
-    white: pk("#ffffff"), logo: pk("#ffffff"), logoLo: pk("#d9dde4"),
+    white: pk("#ffffff"), logo: pk("#e6e9ee"), logoLo: pk("#9aa1ad"),
   };
 
   // ---- DOM ----------------------------------------------------------------------
@@ -975,7 +978,7 @@
             var bcol = c.body;
             var lit = ((bx3 + 0.5 - aw[0]) * -0.6 + (by + 0.5 - aw[1]) * -0.8) / (5 * z);
             if (ea > 0.62) bcol = lit > 0.25 ? c.rim : lit < -0.45 ? c.edge : bcol;
-            // the SCOTY "S" on her back, always upright on screen
+            // the SCOTY anchor on her back, always upright on screen
             var gxl = Math.floor(bx3 + 0.5 - aw[0] + LOGO_W / 2);
             var gyl = Math.floor(by + 0.5 - aw[1] + LOGO_H / 2);
             if (gxl >= 0 && gxl < LOGO_W && gyl >= 0 && gyl < LOGO_H) {
