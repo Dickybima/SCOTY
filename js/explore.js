@@ -92,7 +92,7 @@
     const paint = (d) => {
       const pg = d.progress == null ? null : Math.min(100, d.progress);
       el.innerHTML = `
-        <a class="off-logo" href="${href}">${d.logo ? `<img src="${esc(imgSrc(d.logo))}" alt="">` : '<img src="assets/logo.png?v=2" alt="">'}</a>
+        <a class="off-logo" href="${href}"><img src="assets/logo.png?v=2" alt=""></a>
         <div class="off-main">
           <span class="off-badge">⚓ Official token</span>
           <a class="off-name" href="${href}">${esc(d.name || "SCOTY")} <span>$${esc(d.symbol || "SCOTY")}</span></a>

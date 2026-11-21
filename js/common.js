@@ -258,8 +258,34 @@
     return new ethers.JsonRpcProvider(chain.rpc, chain.chainId, { staticNetwork: true });
   }
   const tokenUrl = (address) => "token.html?address=" + address;
-  const imgSrc = (u) => (typeof u === "string" && u.startsWith("ipfs://") ? "https://ipfs.io/ipfs/" + u.slice(7) : u);
-  const logoHTML = (t) => (t.image ? `<img src="${esc(imgSrc(t.image))}" alt="">` : logoSVG(t.symbol + t.name, t.symbol));
+  // ipfs:// links go through public gateways; if one fails the next is tried
+  const IPFS_GATEWAYS = ["https://ipfs.io/ipfs/", "https://dweb.link/ipfs/", "https://gateway.pinata.cloud/ipfs/", "https://4everland.io/ipfs/"];
+  const OFFICIAL_LOGO = "assets/logo.png?v=2";
+  const isOfficialToken = (a) => !!CFG.officialToken && !!a && String(a).toLowerCase() === CFG.officialToken.toLowerCase();
+  const imgSrc = (u) => (typeof u === "string" && u.startsWith("ipfs://") ? IPFS_GATEWAYS[0] + u.slice(7).replace(/^ipfs\//, "") : u);
 
-  window.SCOTY = { CFG, W, Store, logoSVG, logoDataUri, logoHTML, imgSrc, readProvider, tokenUrl, esc, fmtUsd, ago, short, hash };
+  // <img> for a token logo that never shows as a broken image: it retries other
+  // IPFS gateways, then falls back to the generated logo for that ticker.
+  function tokenImg(src, t) {
+    const fb = logoDataUri((t.symbol || "") + (t.name || ""), t.symbol);
+    const cid = typeof src === "string" && src.startsWith("ipfs://") ? src.slice(7).replace(/^ipfs\//, "") : "";
+    return `<img src="${esc(imgSrc(src))}" alt="" loading="lazy" data-fb="${esc(fb)}"${cid ? ` data-cid="${esc(cid)}" data-gw="0"` : ""}>`;
+  }
+  const logoHTML = (t) => {
+    if (isOfficialToken(t.address)) return `<img src="${OFFICIAL_LOGO}" alt="">`;
+    return t.image ? tokenImg(t.image, t) : logoSVG(t.symbol + t.name, t.symbol);
+  };
+  addEventListener("error", (e) => {
+    const img = e.target;
+    if (!img || img.tagName !== "IMG" || !img.dataset.fb) return;
+    if (img.dataset.cid) {
+      const next = Number(img.dataset.gw || 0) + 1;
+      if (next < IPFS_GATEWAYS.length) { img.dataset.gw = String(next); img.src = IPFS_GATEWAYS[next] + img.dataset.cid; return; }
+    }
+    const fb = img.dataset.fb;
+    delete img.dataset.fb;
+    img.src = fb;
+  }, true);
+
+  window.SCOTY = { CFG, W, Store, logoSVG, logoDataUri, logoHTML, tokenImg, imgSrc, isOfficialToken, OFFICIAL_LOGO, readProvider, tokenUrl, esc, fmtUsd, ago, short, hash };
 })();

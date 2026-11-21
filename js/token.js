@@ -1,6 +1,6 @@
 // Token page: live chart, market cap, holders, trades, and buy/sell on the Pons V2 curve.
 (function () {
-  const { CFG, W, Feed, Store, logoSVG, imgSrc, readProvider, esc, ago, short } = window.SCOTY;
+  const { CFG, W, Feed, Store, logoSVG, tokenImg, isOfficialToken, OFFICIAL_LOGO, readProvider, esc, ago, short } = window.SCOTY;
   const $ = (id) => document.getElementById(id);
   const chain = CFG.chains[0];
   const api = chain.explorerApi;
@@ -76,7 +76,8 @@
 
   function renderHead(info) {
     const logo = info && Feed.safeImg(info.tokenLogo);
-    $("tkLogo").innerHTML = logo ? `<img src="${esc(imgSrc(logo))}" alt="">` : logoSVG(S.symbol + S.name, S.symbol);
+    $("tkLogo").innerHTML = isOfficialToken(address) ? `<img src="${OFFICIAL_LOGO}" alt="">`
+      : logo ? tokenImg(logo, { symbol: S.symbol, name: S.name }) : logoSVG(S.symbol + S.name, S.symbol);
     $("tkName").textContent = S.name;
     $("tkSym").textContent = "$" + S.symbol;
     const links = [];

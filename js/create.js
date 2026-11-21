@@ -78,7 +78,7 @@
       $("logo").innerHTML = `<label class="logo-drop" for="upload"><span>⬆</span>Upload your logo</label>`;
       return;
     }
-    $("logo").innerHTML = `<img src="${esc(link ? imgSrc(link) : logoDataUri(state.seed, $("symbol").value))}" alt="logo">`;
+    $("logo").innerHTML = link ? window.SCOTY.tokenImg(link, { symbol: $("symbol").value, name: $("name").value }) : `<img src="${esc(logoDataUri(state.seed, $("symbol").value))}" alt="logo">`;
   }
 
   // ── Mode: Generate or Manual ───────────────────────────────
