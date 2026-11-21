@@ -17,7 +17,6 @@
   document.getElementById("nav").outerHTML = `
   <header class="nav"><div class="wrap nav-in">
     <a href="index.html" class="brand"><img class="brand-mark" src="assets/logo.png?v=2" alt="">SCOTY</a>
-    <span class="tag">${CFG.network}</span>
     <nav class="menu">${navLinks}
     </nav>
     <button class="wallet" id="walletBtn"><span class="dot"></span><span id="walletLbl">Connect Wallet</span></button>
