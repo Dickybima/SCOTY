@@ -344,3 +344,26 @@ main{animation:fadeIn .6s ease-out}
   .brand-mark{width:32px;height:32px}
 }
 @media (prefers-reduced-motion:reduce){main,.mobile-menu.open{animation:none}.btn-main:hover{transform:none}}
+
+
+/* launch settings */
+.setting{border-top:1px solid var(--line);margin-top:18px;padding-top:4px}
+.setting .lbl{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:.92rem}
+.setting .lbl b{margin-left:auto;font-family:var(--mono);color:var(--accent)}
+.opt{font-size:.72rem;font-weight:500;color:var(--soft);border:1px solid var(--line2);border-radius:999px;padding:1px 8px}
+.amount{position:relative}
+.amount .input{padding-right:64px;font-family:var(--mono);font-size:1.05rem}
+.amount .unit{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600;font-size:.9rem}
+.amount .input::-webkit-inner-spin-button,.amount .input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.amount .input{-moz-appearance:textfield}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips button{border:1px solid var(--line2);background:rgba(0,0,0,.45);color:var(--muted);border-radius:999px;padding:6px 14px;font:500 .85rem var(--mono);cursor:pointer;transition:border-color .2s,color .2s,background .2s}
+.chips button:hover{color:#fff;border-color:#4b5563}
+.chips button.on{background:#fff;color:#000;border-color:#fff}
+.note{color:var(--soft);font-size:.85rem;margin-top:10px}
+.range{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:999px;margin:12px 0 6px;cursor:pointer;
+  background:linear-gradient(to right,var(--accent) var(--fill,0%),#1f2937 var(--fill,0%))}
+.range::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 4px rgba(190,253,8,.25)}
+.range::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 4px rgba(190,253,8,.25)}
+.range:focus-visible{outline:2px solid #fff;outline-offset:4px}
+.range-ends{display:flex;justify-content:space-between;font:500 .75rem var(--mono);color:var(--soft)}

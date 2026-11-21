@@ -39,6 +39,11 @@ window.SCOTY_CONFIG = {
     "function launchToken((string name,string symbol,string logo,string description,(string twitter,string telegram,string discord,string website,string farcaster) socials,address creatorFeeRecipient,uint16 creatorTaxBps,bool buybackEnabled,bytes32 expectedEconomics,bytes32 salt) params, uint256 launchConfigId, address pairToken, address[] snipeTaxExemptions) payable returns (address token, address curve)",
   ],
 
+  // Pons V2 bonding curve (one per token): used for the creator's initial buy
+  curveAbi: [
+    "function buy(uint256 quoteIn, uint256 minTokensOut, address recipient) payable returns (uint256 tokensOut)",
+  ],
+
   // Pons V2 fee escrow: creator fees accrue here per recipient wallet
   feeEscrowAbi: [
     "function balanceOf(address recipient) view returns (uint256)",

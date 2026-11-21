@@ -91,13 +91,51 @@
     }));
   }
 
+  // ── Launch settings: initial buy + creator fee ─────────────
+  const fmtEth = (wei) => Number(ethers.formatEther(wei)).toLocaleString("en-US", { maximumFractionDigits: 6 });
+  const fmtTokens = (wei) => Number(ethers.formatUnits(wei, 18)).toLocaleString("en-US", { maximumFractionDigits: 0 });
+  const fmtPct = (bps) => (bps / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }) + "%";
+  function devBuyWei() {
+    const v = $("devBuy").value.trim();
+    if (!v || !window.ethers) return 0n;
+    try { const w = ethers.parseEther(v); return w > 0n ? w : 0n; } catch (_) { return 0n; }
+  }
+  const taxBps = () => Number($("tax").value) || 0;
+  function setMaxTax(max) {
+    const r = $("tax");
+    r.max = String(max);
+    r.step = max >= 100 ? "5" : "1";
+    if (Number(r.value) > max) r.value = String(max);
+    $("taxMax").textContent = fmtPct(max);
+    syncTax();
+  }
+  function syncTax() {
+    const r = $("tax");
+    $("taxVal").textContent = fmtPct(taxBps());
+    r.style.setProperty("--fill", (Number(r.value) / Math.max(1, Number(r.max))) * 100 + "%");
+    renderSummary();
+  }
+  $("tax").addEventListener("input", syncTax);
+  $("devBuy").addEventListener("input", () => {
+    const v = $("devBuy").value;
+    $("buyChips").querySelectorAll("button").forEach((b) => b.classList.toggle("on", Number(b.dataset.v) === Number(v || 0)));
+    renderSummary();
+  });
+  $("buyChips").querySelectorAll("button").forEach((b) => (b.onclick = () => {
+    $("devBuy").value = b.dataset.v === "0" ? "" : b.dataset.v;
+    $("devBuy").dispatchEvent(new Event("input"));
+  }));
+
   // ── Step 04 ───────────────────────────────────────────────
   function renderSummary() {
     $("summary").innerHTML = `
-      <div><span>Token  </span> ${esc($("name").value || "—")} ($${esc($("symbol").value || "—")})</div>
-      <div><span>Network</span> ${esc(state.chain.name)}</div>
-      <div><span>Creator</span> ${W.address ? short(W.address) : "connect wallet"}</div>
-      <div><span>Fee    </span> ${state.feeWei == null ? "—" : ethers.formatEther(state.feeWei) + " " + state.chain.symbol} + gas</div>`;
+      <div><span>Token      </span> ${esc($("name").value || "—")} ($${esc($("symbol").value || "—")})</div>
+      <div><span>Network    </span> ${esc(state.chain.name)}</div>
+      <div><span>Creator    </span> ${W.address ? short(W.address) : "connect wallet"}</div>
+      <div><span>Launch fee </span> ${state.feeWei == null ? "—" : fmtEth(state.feeWei) + " " + state.chain.symbol}</div>
+      <div><span>Initial buy</span> ${devBuyWei() > 0n ? fmtEth(devBuyWei()) + " " + state.chain.symbol : "none"}</div>
+      <div><span>Creator fee</span> ${fmtPct(taxBps())} per trade</div>
+      <div><span>Total      </span> ${state.feeWei == null ? "—" : fmtEth(state.feeWei + devBuyWei()) + " " + state.chain.symbol} + gas</div>`;
     $("deploy").textContent = W.address ? "🚀 Launch token" : "Connect wallet to launch";
   }
   function renderDemo() {
@@ -105,7 +143,7 @@
       ? ""
       : `<span class="demo">DEMO MODE — no launch contract configured for ${esc(state.chain.name)}; launches are simulated locally</span>`;
   }
-  W.onChange(renderSummary);
+  W.onChange(() => { renderSummary(); if (state.feeWei == null) loadFee(); });
 
   const setStatus = (msg, cls = "") => { const s = $("status"); s.className = "status " + cls; s.innerHTML = msg; };
 
@@ -114,8 +152,20 @@
     const chain = state.chain;
     if (!chain.factory || !window.ethers) return;
     try {
-      const rp = new ethers.JsonRpcProvider(chain.rpc, chain.chainId, { staticNetwork: true });
-      state.feeWei = await new ethers.Contract(chain.factory, CFG.factoryAbi, rp).launchFee();
+      // public RPC first, then the connected wallet (if it is on this network)
+      const providers = [new ethers.JsonRpcProvider(chain.rpc, chain.chainId, { staticNetwork: true })];
+      if (W.provider && W.chainId === chain.chainId) providers.unshift(new ethers.BrowserProvider(W.provider));
+      let fee = null, maxTax = null;
+      for (const rp of providers) {
+        try {
+          const f = new ethers.Contract(chain.factory, CFG.factoryAbi, rp);
+          [fee, maxTax] = await Promise.all([f.launchFee(), f.maxCreatorTaxBps().catch(() => null)]);
+          break;
+        } catch (_) {}
+      }
+      if (fee == null) return;
+      state.feeWei = fee;
+      if (maxTax != null) setMaxTax(Number(maxTax));
       renderSummary();
     } catch (_) {}
   }
@@ -139,6 +189,8 @@
   }
 
   const ZERO = "0x0000000000000000000000000000000000000000";
+  const TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+  const ZERO_TOPIC = "0x" + "0".repeat(64);
 
   $("deploy").onclick = async () => {
     const name = $("name").value.trim(), symbol = $("symbol").value.trim(), desc = $("desc").value.trim();
@@ -151,7 +203,7 @@
     const socials = { twitter: $("x").value.trim(), telegram: "", discord: "", website: $("web").value.trim(), farcaster: "" };
 
     try {
-      let address, curve = null, tx = null;
+      let address, curve = null, tx = null, boughtNote = "";
       if (chain.factory && window.ethers) {
         if (W.chainId !== chain.chainId) { setStatus("Switching to " + esc(chain.name) + "…"); await W.switchChain(chain); }
         const provider = new ethers.BrowserProvider(W.provider);
@@ -159,22 +211,29 @@
         const factory = new ethers.Contract(chain.factory, CFG.factoryAbi, signer);
 
         setStatus("Preparing launch…");
-        const [fee, canLaunch, economics] = await Promise.all([
+        const devWei = devBuyWei();
+        const bps = taxBps();
+        const [fee, canLaunch, economics, maxTax, balance] = await Promise.all([
           factory.launchFee(),
           factory.canLaunch(W.address),
           factory.previewLaunchEconomics(chain.launchConfigId, ZERO),
+          factory.maxCreatorTaxBps(),
+          provider.getBalance(W.address),
         ]);
         if (!canLaunch) throw new Error("Launching is currently disabled for this wallet.");
+        if (BigInt(bps) > maxTax) throw new Error(`Creator fee can be at most ${fmtPct(Number(maxTax))}.`);
+        if (balance < fee + devWei) throw new Error(`Not enough ${chain.symbol}: you need ${fmtEth(fee + devWei)} ${chain.symbol} plus gas.`);
 
         const params = {
           name, symbol, logo, description: desc, socials,
           creatorFeeRecipient: W.address,
-          creatorTaxBps: 0,
+          creatorTaxBps: bps,
           buybackEnabled: false,
           expectedEconomics: economics,
           salt: ethers.concat([CFG.launchTag, ethers.randomBytes(32 - ethers.getBytes(CFG.launchTag).length)]), // SCOTY marker + random
         };
-        const args = [params, chain.launchConfigId, ZERO, []];
+        // the creator's own wallet skips the opening anti-snipe tax for the initial buy
+        const args = [params, chain.launchConfigId, ZERO, devWei > 0n ? [W.address] : []];
         // simulate first: catches reverts and returns the new token address
         [address, curve] = await factory.launchToken.staticCall(...args, { value: fee });
 
@@ -184,6 +243,26 @@
         setStatus(`Waiting for confirmation… <a href="${chain.explorer}/tx/${tx}" target="_blank" rel="noopener">view tx ↗</a>`);
         const rc = await sent.wait();
         if (rc.status !== 1) throw new Error("Transaction reverted.");
+        // the new token mints its supply to its curve: read both from the receipt
+        const mint = rc.logs.find((l) => l.topics[0] === TRANSFER && l.topics[1] === ZERO_TOPIC && l.topics.length === 3);
+        if (mint) { address = ethers.getAddress(mint.address); curve = ethers.getAddress("0x" + mint.topics[2].slice(26)); }
+
+        if (devWei > 0n && curve) {
+          try {
+            const c = new ethers.Contract(curve, CFG.curveAbi, signer);
+            const est = await c.buy.staticCall(devWei, 0, W.address, { value: devWei });
+            const minOut = (est * 95n) / 100n; // 5% slippage guard
+            setStatus(`$${esc(symbol)} is live! Confirm your initial buy of ${fmtEth(devWei)} ${chain.symbol}…`);
+            const b = await c.buy(devWei, minOut, W.address, { value: devWei });
+            setStatus(`Buying your supply… <a href="${chain.explorer}/tx/${b.hash}" target="_blank" rel="noopener">view tx ↗</a>`);
+            const brc = await b.wait();
+            if (brc.status !== 1) throw new Error("buy reverted");
+            boughtNote = ` You bought ${fmtTokens(est)} $${esc(symbol)}.`;
+          } catch (be) {
+            console.error(be);
+            boughtNote = ` The initial buy didn't go through (${esc(be.code === "ACTION_REJECTED" ? "rejected" : be.shortMessage || be.message)}).`;
+          }
+        }
       } else {
         setStatus("Simulating launch (demo mode)…");
         await new Promise((r) => setTimeout(r, 1200));
@@ -191,8 +270,8 @@
       }
       Store.add({ name, symbol, description: desc, image: logo.startsWith("data:image/svg") ? null : logo, twitter: socials.twitter, website: socials.website,
         address, curve, tx, chain: chain.key, creator: W.address, createdAt: Date.now(), mcap: 0, change: 0, progress: 0, mine: true, demo: !chain.factory });
-      setStatus(`✅ $${esc(symbol)} is live${chain.factory ? "" : " (demo)"}! Taking you to Explore…`, "ok");
-      setTimeout(() => (location.href = "index.html?token=" + address), 1500);
+      setStatus(`✅ $${esc(symbol)} is live${chain.factory ? "" : " (demo)"}!${boughtNote} Taking you to Explore…`, "ok");
+      setTimeout(() => (location.href = "index.html?token=" + address), boughtNote ? 3500 : 1500);
     } catch (e) {
       console.error(e);
       const msg = e.code === "ACTION_REJECTED" || e.code === 4001 ? "You rejected the transaction." : e.shortMessage || e.reason || e.message || String(e);
@@ -202,5 +281,5 @@
     }
   };
 
-  renderChains(); renderDemo(); renderSummary(); loadFee();
+  renderChains(); renderDemo(); syncTax(); loadFee();
 })();
