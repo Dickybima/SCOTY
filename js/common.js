@@ -38,7 +38,7 @@
     <p>Launch and explore tokens on ${CFG.network}. Your wallet signs every transaction. SCOTY never takes custody of your assets.</p>
     <div class="foot-links"><a href="index.html">Explore</a><a href="create.html">Create</a><a href="profile.html">Profile</a><a href="docs.html">Docs</a><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Use</a></div>
     <p class="fine">SCOTY is a non-custodial, third-party interface to token launch protocols on ${CFG.network}. Transactions may be irreversible and tokens can lose all value. SCOTY provides no custody, warranties, or financial advice.</p>
-    <div class="foot-bot"><span>© ${new Date().getFullYear()} SCOTY</span><span>@scoty</span></div>
+    <div class="foot-bot"><span>© ${new Date().getFullYear()} SCOTY</span><a class="xlink" href="${CFG.x.url}" target="_blank" rel="noopener" aria-label="SCOTY on X">@${CFG.x.handle}<span class="xbtn"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span></a></div>
   </footer>`;
 
   // ── Wallet (EIP-6963 multi-wallet discovery + picker) ───────

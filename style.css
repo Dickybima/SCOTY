@@ -367,3 +367,9 @@ main{animation:fadeIn .6s ease-out}
 .range::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 4px rgba(190,253,8,.25)}
 .range:focus-visible{outline:2px solid #fff;outline-offset:4px}
 .range-ends{display:flex;justify-content:space-between;font:500 .75rem var(--mono);color:var(--soft)}
+
+/* X / Twitter link in the footer */
+.xlink{display:inline-flex;align-items:center;gap:12px;color:var(--muted);transition:color .2s}
+.xlink:hover{color:#fff}
+.xbtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--line2);background:rgba(31,41,55,.5);color:#fff;transition:border-color .2s,background .2s}
+.xlink:hover .xbtn{border-color:#fff;background:#fff;color:#000}

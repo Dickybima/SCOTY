@@ -10,6 +10,7 @@
 window.SCOTY_CONFIG = {
   protocol: "Pons v2",
   network: "Robinhood Chain",
+  x: { handle: "Scotydotfun", url: "https://x.com/Scotydotfun" },
 
   chains: [
     {
