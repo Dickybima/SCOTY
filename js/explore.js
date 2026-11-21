@@ -5,7 +5,10 @@
 
   let sort = "new";
   let onchain = [];          // SCOTY launches read from chain
-  let loading = !!chain.factory;
+  // show the last known list straight away, then refresh it
+  const cachedList = Feed.cached();
+  if (cachedList) onchain = cachedList;
+  let loading = !!chain.factory && !cachedList;
   let feedError = false;
 
   async function loadFeed() {
@@ -29,7 +32,7 @@
   }
 
   function render() {
-    if (loading) { $("tokens").innerHTML = '<div class="empty">Loading launches…</div>'; return; }
+    if (loading) { $("tokens").innerHTML = '<div class="empty"><span class="spin dark"></span> Loading launches…</div>'; return; }
     const q = $("q").value.trim().toLowerCase();
     let l = all().filter((t) => !q || t.name.toLowerCase().includes(q) || t.symbol.toLowerCase().includes(q) || t.address.toLowerCase() === q);
     if (sort === "mine") l = l.filter((t) => t.mine);

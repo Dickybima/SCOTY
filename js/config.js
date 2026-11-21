@@ -110,6 +110,8 @@ window.SCOTY_CONFIG = {
 
   // Logo upload endpoint (Vercel function in /api/upload.js, stores to Vercel Blob)
   uploadUrl: "/api/upload",
+  // SCOTY launches, scanned server-side and CDN-cached (Vercel function in /api/launches.js)
+  launchesUrl: "/api/launches",
 
   // Pons V2 fee escrow: creator fees accrue here per recipient wallet
   feeEscrowAbi: [

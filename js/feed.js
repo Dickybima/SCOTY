@@ -53,7 +53,7 @@
   }
 
   // All SCOTY launches found on-chain (newest first)
-  async function loadLaunches() {
+  async function scanFromBrowser() {
     if (!chain.factory || !chain.explorerApi || !window.ethers) return [];
     const launches = await scotyLaunchTxs();
     return (await Promise.all(launches.map(async ({ tx, p }) => {
@@ -88,5 +88,36 @@
   }
 
 
-  window.SCOTY.Feed = { getJSON, loadLaunches, merge, safeImg };
+  // ── Fast path: server-side scan (CDN cached), plus a browser cache ──────────
+  const CACHE_KEY = "scoty.launchCache.v1";
+  function cached() {
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY));
+      if (c && Array.isArray(c.launches) && Date.now() - c.at < 7 * 864e5) return c.launches;
+    } catch (_) {}
+    return null;
+  }
+  function saveCache(launches) {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), launches })); } catch (_) {}
+  }
+  const clean = (t) => ({ ...t, image: safeImg(t.image), twitter: /^https:\/\//.test(t.twitter || "") ? t.twitter : null,
+    website: /^https:\/\//.test(t.website || "") ? t.website : null, change: 0, progress: null, chain: chain.key });
+
+  async function loadLaunches() {
+    if (CFG.launchesUrl) {
+      try {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 30000);
+        const r = await fetch(CFG.launchesUrl, { signal: ctl.signal, headers: { accept: "application/json" } });
+        clearTimeout(timer);
+        const d = r.ok ? await r.json() : null;
+        if (d && Array.isArray(d.launches)) { const list = d.launches.map(clean); saveCache(list); return list; }
+      } catch (e) { console.warn("launch index unavailable, scanning from the browser", e); }
+    }
+    const list = await scanFromBrowser();
+    saveCache(list);
+    return list;
+  }
+
+  window.SCOTY.Feed = { getJSON, loadLaunches, cached, merge, safeImg };
 })();

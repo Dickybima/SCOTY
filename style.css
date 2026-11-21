@@ -459,3 +459,4 @@ a.txrow:hover{background:rgba(31,41,55,.35)}
 .logo-drop:hover{color:#fff}
 .logo-req{color:var(--bad);font-size:.8rem;font-weight:600}
 @media (max-width:560px){.modes{grid-template-columns:1fr}}
+.spin.dark{display:inline-block;vertical-align:-3px;margin-right:8px;border-color:rgba(255,255,255,.2);border-top-color:var(--accent)}
