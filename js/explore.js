@@ -5,6 +5,7 @@
 
   let sort = "new";
   let onchain = [];          // SCOTY launches read from chain
+  let officialEntry = null;  // the official token, listed even if launched outside SCOTY
   // show the last known list straight away, then refresh it
   const cachedList = Feed.cached();
   if (cachedList) onchain = cachedList;
@@ -22,7 +23,11 @@
     stats(); render(); openFromUrl();
   }
 
-  const all = () => Feed.merge(onchain);
+  const all = () => {
+    const l = Feed.merge(onchain);
+    if (officialEntry && !l.some((t) => isOfficial(t.address))) l.push(officialEntry);
+    return l;
+  };
 
   function stats() {
     const l = all();
@@ -44,7 +49,7 @@
       <button class="tok" data-i="${i}" type="button">
         <div class="tok-top">
           <div class="logo">${logoHTML(t)}</div>
-          <div><b>${esc(t.name)}</b><small>$${esc(t.symbol)} · ${ago(t.createdAt)}</small></div>
+          <div><b>${esc(t.name)}</b><small>$${esc(t.symbol)}${t.createdAt ? " · " + ago(t.createdAt) : ""}</small></div>
           ${isOfficial(t.address) ? '<span class="chip official">⚓ official</span>' : t.mine ? `<span class="chip mine">${t.demo ? "yours · demo" : "yours"}</span>` : ""}
         </div>
         <p>${esc(t.description || "Launched on Robinhood Chain · " + short(t.address))}</p>
@@ -117,7 +122,7 @@
         token.name().catch(() => null), token.symbol().catch(() => null),
         token.getTokenInfo().catch(() => null), factory.getLaunchedToken(addr).catch(() => null),
       ]);
-      Object.assign(d, { name, symbol, logo: info && Feed.safeImg(info.tokenLogo) });
+      Object.assign(d, { name, symbol, logo: info && Feed.safeImg(info.tokenLogo), description: info && info.tokenDescription, creator: lt && lt.exists ? lt.deployer : null });
       if (lt && lt.exists) {
         d.graduated = Number(lt.phase) > 0;
         const c = new ethers.Contract(lt.curve, CFG.curveAbi, rp);
@@ -131,9 +136,21 @@
         d.mcap = d.price * Number(ethers.formatUnits(supply, 18));
         d.progress = threshold > 0n ? (Number(raised) / Number(threshold)) * 100 : null;
         d.holders = Number(tok.holders_count || 0);
+        // when it was launched, from the token contract's creation transaction
+        const info2 = await Feed.getJSON(`${chain.explorerApi}/addresses/${addr}`).catch(() => ({}));
+        const ctx = info2.creation_transaction_hash || info2.creation_tx_hash;
+        if (ctx) { const tx = await Feed.getJSON(`${chain.explorerApi}/transactions/${ctx}`).catch(() => ({})); if (tx.timestamp) d.createdAt = Date.parse(tx.timestamp); }
       }
     } catch (e) { console.warn("official token unavailable", e); }
     paint(d);
+    if (d.name || d.symbol) {
+      officialEntry = {
+        name: d.name || "SCOTY", symbol: d.symbol || "SCOTY", description: d.description || "The official SCOTY token.",
+        image: d.logo || null, address: addr, creator: d.creator, createdAt: d.createdAt || 0,
+        mcap: d.mcap || 0, holders: d.holders || 0, change: 0, progress: null, chain: chain.key,
+      };
+      stats(); render();
+    }
   }
 
   stats(); render(); openFromUrl();
