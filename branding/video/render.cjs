@@ -1,8 +1,8 @@
 // Renders a time-driven HTML animation (window.render(t), window.DURATION) to an H.264 MP4.
 //
-//   node branding/video/render.js                                   # meet-scoty.mp4 (1920×1080)
-//   node branding/video/render.js logo-assemble.html logo-square.mp4 1080 1080
-//   node branding/video/render.js logo-assemble.html logo-wide.mp4 1920 1080
+//   node branding/video/render.cjs                                   # meet-scoty.mp4 (1920×1080)
+//   node branding/video/render.cjs logo-assemble.html logo-square.mp4 1080 1080
+//   node branding/video/render.cjs logo-assemble.html logo-wide.mp4 1920 1080
 //
 // Args: [html] [out] [width] [height] [cssScale]. HTML pages that size themselves from
 // ?w=&h= get those params; others are rendered at width/cssScale and scaled up.

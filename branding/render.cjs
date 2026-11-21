@@ -1,5 +1,5 @@
 // Renders branding/x-header.html to PNG files next to it.
-//   node branding/render.js
+//   node branding/render.cjs
 // Produces x-header.png (1500×500, upload this to X) and x-header@2x.png.
 const { chromium } = require("playwright");
 const path = require("path");
