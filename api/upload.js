@@ -3,8 +3,8 @@
 // Pons keeps a token's logo on-chain as a string of at most 512 bytes, so the image
 // itself can't go on-chain. The studio uploads it here and stores the short URL instead.
 //
-// Setup (once): Vercel dashboard → Storage → Create → Blob, connect it to this project.
-// That adds the BLOB_READ_WRITE_TOKEN environment variable. Redeploy afterwards.
+// Setup (once): Vercel dashboard → Storage → Create → Blob (Public), connect it to this
+// project, then redeploy. Works with a read-write token or with OIDC + BLOB_STORE_ID.
 import { put } from "@vercel/blob";
 
 const MAX_BYTES = 1024 * 1024; // 1 MB (the studio resizes to 512 px WebP first)
@@ -20,12 +20,22 @@ function sniff(b) {
   return null;
 }
 
-// The Blob integration normally adds BLOB_READ_WRITE_TOKEN, but a custom prefix can
-// rename it (e.g. SCOTY_READ_WRITE_TOKEN). Blob tokens always start with vercel_blob_rw_.
-function blobToken() {
-  if (process.env.BLOB_READ_WRITE_TOKEN) return { name: "BLOB_READ_WRITE_TOKEN", value: process.env.BLOB_READ_WRITE_TOKEN };
-  for (const [name, value] of Object.entries(process.env)) {
-    if (typeof value === "string" && value.startsWith("vercel_blob_rw_")) return { name, value };
+// Blob credentials, in either of the two ways Vercel connects a store:
+//  1. a read-write token (BLOB_READ_WRITE_TOKEN, or a custom-prefixed name; the value
+//     always starts with vercel_blob_rw_), or
+//  2. OIDC: the store id (BLOB_STORE_ID, value starts with store_) plus the Vercel OIDC
+//     token, which Vercel sends to the function in the x-vercel-oidc-token header.
+function blobAuth(request) {
+  const env = process.env;
+  let rw = env.BLOB_READ_WRITE_TOKEN ? { name: "BLOB_READ_WRITE_TOKEN", value: env.BLOB_READ_WRITE_TOKEN } : null;
+  if (!rw) for (const [name, value] of Object.entries(env)) if (typeof value === "string" && value.startsWith("vercel_blob_rw_")) { rw = { name, value }; break; }
+  if (rw) return { kind: "read-write token", variable: rw.name, options: { token: rw.value } };
+
+  let store = env.BLOB_STORE_ID ? { name: "BLOB_STORE_ID", value: env.BLOB_STORE_ID } : null;
+  if (!store) for (const [name, value] of Object.entries(env)) if (/STORE_ID$/.test(name) && typeof value === "string" && value.startsWith("store_")) { store = { name, value }; break; }
+  if (store) {
+    const oidc = (request && request.headers.get("x-vercel-oidc-token")) || env.VERCEL_OIDC_TOKEN || "";
+    return { kind: "oidc", variable: store.name, oidc: !!oidc, options: { storeId: store.value, ...(oidc ? { oidcToken: oidc } : {}) } };
   }
   return null;
 }
@@ -34,8 +44,8 @@ const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 
 export async function POST(request) {
-  const token = blobToken();
-  if (!token) {
+  const auth = blobAuth(request);
+  if (!auth) {
     return json({ error: "Image uploads aren't set up on this site yet.", code: "NO_BLOB_TOKEN" }, 503);
   }
   const declared = Number(request.headers.get("content-length") || 0);
@@ -54,7 +64,7 @@ export async function POST(request) {
       contentType: type,
       addRandomSuffix: true,
       cacheControlMaxAge: 31536000,
-      token: token.value,
+      ...auth.options,
     });
     return json({ url: blob.url });
   } catch (e) {
@@ -64,11 +74,17 @@ export async function POST(request) {
 }
 
 // GET /api/upload → quick health check: open it in a browser to see if uploads are on
-export function GET() {
-  const token = blobToken();
+export function GET(request) {
+  const auth = blobAuth(request);
   return json({
-    enabled: !!token,
-    tokenVariable: token ? token.name : null,
-    hint: token ? "Uploads are ready." : "Connect a Vercel Blob store to this project (Storage → Blob → Connect), then redeploy.",
+    enabled: !!auth && (auth.kind !== "oidc" || auth.oidc),
+    auth: auth ? auth.kind : null,
+    variable: auth ? auth.variable : null,
+    oidcToken: auth && auth.kind === "oidc" ? auth.oidc : undefined,
+    hint: !auth
+      ? "No Blob store found. Connect a Vercel Blob store to this project (Storage → Blob → Connect), then redeploy."
+      : auth.kind === "oidc" && !auth.oidc
+      ? "Blob store found, but no Vercel OIDC token reached the function. Check Settings → Security → OIDC Federation is enabled, then redeploy."
+      : "Uploads are ready.",
   });
 }
