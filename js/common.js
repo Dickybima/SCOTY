@@ -224,7 +224,35 @@
       : `<path d="M10 90 Q40 40 70 70 T130 40 V130 H-10Z" fill="#fff" opacity=".18"/>`;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g${h}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${a} 85% 60%)"/><stop offset="1" stop-color="hsl(${b} 85% 52%)"/></linearGradient></defs><rect width="120" height="120" fill="url(#g${h})"/>${deco}<text x="60" y="${Math.round(60 + fs * 0.36)}" text-anchor="middle" font-family="Poppins,Arial,sans-serif" font-weight="700" font-size="${fs}" letter-spacing="-0.5" fill="#fff">${glyph}</text></svg>`;
   }
-  const logoHTML = (t) => (t.image ? `<img src="${t.image}" alt="">` : logoSVG(t.symbol + t.name, t.symbol));
+  // Compact version of the generated logo as a data URI, kept under Pons' 512-byte
+  // logo limit so it can be stored on-chain with the token.
+  function hslHex(h, s, l) {
+    s /= 100; l /= 100;
+    const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+    const f = (n) => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))).toString(16).padStart(2, "0");
+    return "#" + f(0) + f(8) + f(4);
+  }
+  function logoDataUri(seed, text) {
+    const h = hash(seed || "scoty");
+    const a = h % 360, b = (a + 40 + (h >> 8) % 80) % 360;
+    const glyph = (text || "?").replace(/[^A-Za-z0-9]/g, "").slice(0, 5).toUpperCase() || "?";
+    const fs = [44, 44, 44, 36, 28, 23][glyph.length];
+    const shape = (h >> 4) % 3;
+    const deco = shape === 0 ? `<circle cx='${30 + (h % 40)}' cy='${30 + ((h >> 3) % 40)}' r='34' fill='#fff' opacity='.18'/>`
+      : shape === 1 ? "<path d='M-9 96 140 54v80H-9z' fill='#fff' opacity='.16'/>"
+      : "<path d='M10 90Q40 40 70 70T130 40v90H-10z' fill='#fff' opacity='.18'/>";
+    const build = (d) => "data:image/svg+xml," + (
+      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><linearGradient id='g' x2='1' y2='1'>" +
+      `<stop stop-color='${hslHex(a, 85, 60)}'/><stop offset='1' stop-color='${hslHex(b, 85, 52)}'/></linearGradient>` +
+      `<rect width='120' height='120' fill='url(#g)'/>${d}` +
+      `<text x='60' y='${Math.round(60 + fs * 0.36)}' text-anchor='middle' font-family='Arial,sans-serif' font-weight='700' font-size='${fs}' fill='#fff'>${glyph}</text></svg>`
+    ).replace(/%/g, "%25").replace(/#/g, "%23");
+    const full = build(deco);
+    return new TextEncoder().encode(full).length <= (CFG.limits ? CFG.limits.logo : 512) ? full : build("");
+  }
+  // ipfs:// links shown through a public gateway
+  const imgSrc = (u) => (typeof u === "string" && u.startsWith("ipfs://") ? "https://ipfs.io/ipfs/" + u.slice(7) : u);
+  const logoHTML = (t) => (t.image ? `<img src="${esc(imgSrc(t.image))}" alt="">` : logoSVG(t.symbol + t.name, t.symbol));
 
-  window.SCOTY = { CFG, W, Store, logoSVG, logoHTML, esc, fmtUsd, ago, short, hash };
+  window.SCOTY = { CFG, W, Store, logoSVG, logoDataUri, logoHTML, imgSrc, esc, fmtUsd, ago, short, hash };
 })();

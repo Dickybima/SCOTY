@@ -17,7 +17,7 @@
   const TAG = CFG.launchTag.toLowerCase();
   const TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
   const ZERO_TOPIC = "0x" + "0".repeat(64);
-  const safeImg = (u) => (typeof u === "string" && /^(data:image\/(png|jpe?g|webp|gif|svg\+xml)[;,]|https:\/\/)/i.test(u) ? u : null);
+  const safeImg = (u) => (typeof u === "string" && /^(data:image\/(png|jpe?g|webp|gif|svg\+xml)[;,]|https:\/\/|ipfs:\/\/)/i.test(u) ? u : null);
 
   async function scotyLaunchTxs() {
     const iface = new ethers.Interface(CFG.factoryAbi);

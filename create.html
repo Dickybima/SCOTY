@@ -41,16 +41,18 @@
       <div class="pkg">
         <div class="logo-box">
           <div class="logo" id="logo"></div>
-          <label class="btn btn-sm">Upload image<input type="file" id="upload" accept="image/*" hidden></label>
           <button class="btn btn-sm" id="reroll" type="button">↻ New look</button>
         </div>
         <div>
           <div class="grid2">
-            <div><label class="lbl" for="name">Name</label><input class="input" id="name" maxlength="32"></div>
-            <div><label class="lbl" for="symbol">Ticker</label><input class="input" id="symbol" maxlength="10"></div>
+            <div><label class="lbl" for="name">Name</label><input class="input" id="name" maxlength="64"></div>
+            <div><label class="lbl" for="symbol">Ticker</label><input class="input" id="symbol" maxlength="16"></div>
           </div>
           <label class="lbl" for="desc">Description</label>
-          <textarea class="textarea" id="desc" maxlength="400"></textarea>
+          <textarea class="textarea" id="desc" maxlength="1000"></textarea>
+          <label class="lbl" for="logoUrl">Logo image link <span class="opt">optional</span></label>
+          <input class="input" id="logoUrl" placeholder="https://… or ipfs://…  (leave empty to use the generated logo)">
+          <p class="note" id="logoNote">Pons stores the logo on-chain as a link (max 512 bytes). Paste a link to a hosted image, or keep the generated logo.</p>
           <div class="grid2">
             <div><label class="lbl" for="x">X / Twitter (optional)</label><input class="input" id="x" placeholder="https://x.com/…"></div>
             <div><label class="lbl" for="web">Website (optional)</label><input class="input" id="web" placeholder="https://…"></div>

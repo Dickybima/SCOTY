@@ -1,5 +1,5 @@
 (function () {
-  const { CFG, W, Store, logoSVG, esc, short } = window.SCOTY;
+  const { CFG, W, Store, logoSVG, logoDataUri, imgSrc, esc, short } = window.SCOTY;
   const $ = (id) => document.getElementById(id);
   const state = { chain: CFG.chains[0], image: null, seed: "" };
 
@@ -66,19 +66,25 @@
 
   // ── Step 02 ───────────────────────────────────────────────
   function renderLogo() {
-    $("logo").innerHTML = state.image ? `<img src="${state.image}" alt="logo">` : logoSVG(state.seed, $("symbol").value);
+    const link = logoLink();
+    $("logo").innerHTML = `<img src="${esc(link ? imgSrc(link) : logoDataUri(state.seed, $("symbol").value))}" alt="logo">`;
   }
   $("symbol").addEventListener("input", (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); renderLogo(); renderSummary(); });
   ["name", "desc"].forEach((id) => $(id).addEventListener("input", renderSummary));
-  $("reroll").onclick = () => { state.image = null; state.seed = Math.random().toString(36); renderLogo(); };
-  $("upload").onchange = (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    if (f.size > 1024 * 1024) { alert("Please choose an image under 1 MB."); return; }
-    const rd = new FileReader();
-    rd.onload = () => { state.image = rd.result; renderLogo(); };
-    rd.readAsDataURL(f);
-  };
+  $("reroll").onclick = () => { $("logoUrl").value = ""; state.seed = Math.random().toString(36); renderLogo(); };
+  // a hosted logo link (https:// or ipfs://), validated against Pons' 512-byte cap
+  function logoLink() {
+    const v = $("logoUrl").value.trim();
+    return /^(https:\/\/|ipfs:\/\/)\S+$/i.test(v) && byteLen(v) <= CFG.limits.logo ? v : "";
+  }
+  $("logoUrl").addEventListener("input", () => {
+    const v = $("logoUrl").value.trim(), note = $("logoNote");
+    if (!v) { note.className = "note"; note.textContent = "Pons stores the logo on-chain as a link (max 512 bytes). Paste a link to a hosted image, or keep the generated logo."; }
+    else if (!/^(https:\/\/|ipfs:\/\/)/i.test(v)) { note.className = "note bad"; note.textContent = "Use a link that starts with https:// or ipfs://"; }
+    else if (byteLen(v) > CFG.limits.logo) { note.className = "note bad"; note.textContent = `That link is ${byteLen(v)} bytes; Pons allows ${CFG.limits.logo}.`; }
+    else { note.className = "note"; note.textContent = "Using your image link as the token logo."; }
+    renderLogo();
+  });
 
   // ── Step 03 ───────────────────────────────────────────────
   function renderChains() {
@@ -170,22 +176,36 @@
     } catch (_) {}
   }
 
-  // shrink logo so it is cheap to store on-chain
-  function shrinkImage(dataUrl, size = 128) {
-    return new Promise((res) => {
-      const img = new Image();
-      img.onload = () => {
-        const c = document.createElement("canvas"); c.width = c.height = size;
-        const ctx = c.getContext("2d");
-        const s = Math.min(img.width, img.height);
-        ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
-        let out = c.toDataURL("image/webp", 0.8);
-        if (!out.startsWith("data:image/webp")) out = c.toDataURL("image/jpeg", 0.8);
-        res(out);
-      };
-      img.onerror = () => res(dataUrl);
-      img.src = dataUrl;
-    });
+  const byteLen = (s) => new TextEncoder().encode(s).length;
+  // Pons rejects metadata over its byte caps (MetadataTooLong); check before signing
+  function metadataProblem(m) {
+    const L = CFG.limits;
+    if (byteLen(m.name) > L.name) return `Name is too long (max ${L.name} bytes).`;
+    if (byteLen(m.symbol) > L.symbol) return `Ticker is too long (max ${L.symbol} characters).`;
+    if (byteLen(m.logo) > L.logo) return `Logo is too large for Pons (max ${L.logo} bytes). Use an https:// or ipfs:// image link.`;
+    if (byteLen(m.description) > L.description) return `Description is too long (max ${L.description} bytes).`;
+    for (const [k, v] of Object.entries(m.socials)) if (byteLen(v) > L.social) return `${k} link is too long (max ${L.social} bytes).`;
+    return "";
+  }
+  // readable messages for Pons custom errors
+  const PONS_MSG = {
+    MetadataTooLong: "Name, ticker, logo link or description is longer than Pons allows.",
+    InvalidTokenParams: "Pons rejected the token details. Check the name and ticker.",
+    CreatorTaxTooHigh: "Creator fee is above the Pons maximum.",
+    LaunchFeeNotPaid: "The launch fee changed. Please try again.",
+    LaunchEconomicsMismatch: "Pons launch terms just changed. Please try again.",
+    NotWhitelisted: "Launching is currently paused on Pons.",
+    LaunchConfigDisabled: "This Pons launch configuration is closed.",
+    ExemptionListTooLong: "Too many anti-snipe exemptions.",
+    SlippageExceeded: "Price moved too much during your initial buy.",
+  };
+  function launchError(e) {
+    if (e.code === "ACTION_REJECTED" || e.code === 4001) return "You rejected the transaction.";
+    const name = e.revert && e.revert.name;
+    if (name) return PONS_MSG[name] || `Pons reverted with ${name}.`;
+    const data = e.data || (e.info && e.info.error && e.info.error.data);
+    const sel = typeof data === "string" && data.length >= 10 ? ` (error ${data.slice(0, 10)})` : "";
+    return (e.shortMessage || e.reason || e.message || String(e)) + sel;
   }
 
   const ZERO = "0x0000000000000000000000000000000000000000";
@@ -199,8 +219,11 @@
     const btn = $("deploy");
     btn.disabled = true;
     const chain = state.chain;
-    const logo = state.image ? await shrinkImage(state.image) : "data:image/svg+xml;utf8," + encodeURIComponent(logoSVG(state.seed, symbol));
+    if ($("logoUrl").value.trim() && !logoLink()) { btn.disabled = false; return setStatus("Logo link must start with https:// or ipfs:// and be at most 512 bytes.", "err"); }
+    const logo = logoLink() || logoDataUri(state.seed, symbol);
     const socials = { twitter: $("x").value.trim(), telegram: "", discord: "", website: $("web").value.trim(), farcaster: "" };
+    const problem = metadataProblem({ name, symbol, logo, description: desc, socials });
+    if (problem) { btn.disabled = false; return setStatus(problem, "err"); }
 
     try {
       let address, curve = null, tx = null, boughtNote = "";
@@ -208,7 +231,7 @@
         if (W.chainId !== chain.chainId) { setStatus("Switching to " + esc(chain.name) + "…"); await W.switchChain(chain); }
         const provider = new ethers.BrowserProvider(W.provider);
         const signer = await provider.getSigner();
-        const factory = new ethers.Contract(chain.factory, CFG.factoryAbi, signer);
+        const factory = new ethers.Contract(chain.factory, [...CFG.factoryAbi, ...CFG.ponsErrors], signer);
 
         setStatus("Preparing launch…");
         const devWei = devBuyWei();
@@ -249,7 +272,7 @@
 
         if (devWei > 0n && curve) {
           try {
-            const c = new ethers.Contract(curve, CFG.curveAbi, signer);
+            const c = new ethers.Contract(curve, [...CFG.curveAbi, ...CFG.ponsErrors], signer);
             const est = await c.buy.staticCall(devWei, 0, W.address, { value: devWei });
             const minOut = (est * 95n) / 100n; // 5% slippage guard
             setStatus(`$${esc(symbol)} is live! Confirm your initial buy of ${fmtEth(devWei)} ${chain.symbol}…`);
@@ -268,14 +291,13 @@
         await new Promise((r) => setTimeout(r, 1200));
         address = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(20)), (b) => b.toString(16).padStart(2, "0")).join("");
       }
-      Store.add({ name, symbol, description: desc, image: logo.startsWith("data:image/svg") ? null : logo, twitter: socials.twitter, website: socials.website,
+      Store.add({ name, symbol, description: desc, image: logo, twitter: socials.twitter, website: socials.website,
         address, curve, tx, chain: chain.key, creator: W.address, createdAt: Date.now(), mcap: 0, change: 0, progress: 0, mine: true, demo: !chain.factory });
       setStatus(`✅ $${esc(symbol)} is live${chain.factory ? "" : " (demo)"}!${boughtNote} Taking you to Explore…`, "ok");
       setTimeout(() => (location.href = "index.html?token=" + address), boughtNote ? 3500 : 1500);
     } catch (e) {
       console.error(e);
-      const msg = e.code === "ACTION_REJECTED" || e.code === 4001 ? "You rejected the transaction." : e.shortMessage || e.reason || e.message || String(e);
-      setStatus("Launch failed: " + esc(msg), "err");
+      setStatus("Launch failed: " + esc(launchError(e)), "err");
     } finally {
       btn.disabled = false;
     }

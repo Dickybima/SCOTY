@@ -31,6 +31,46 @@ window.SCOTY_CONFIG = {
   // ("SCOTY" in hex). Explore only lists launches carrying this marker.
   launchTag: "0x53434f5459",
 
+  // Pons V2 metadata caps (PonsV2LaunchDeployer, in bytes). Longer strings
+  // revert the launch with MetadataTooLong.
+  limits: { name: 64, symbol: 16, logo: 512, description: 2048, social: 256 },
+
+  // Custom errors Pons V2 contracts can revert with, so failures are readable
+  ponsErrors: [
+    "error AlreadyGraduated()",
+    "error CombinedFeeTooHigh()",
+    "error CreatorTaxTooHigh()",
+    "error CurveGraduated()",
+    "error CurveNotQuotable()",
+    "error ExemptionListTooLong()",
+    "error FeeTransferFailed()",
+    "error InsufficientInputAmount()",
+    "error InsufficientLiquidity()",
+    "error InsufficientOutputAmount()",
+    "error InvalidBasisPoints()",
+    "error InvalidBps()",
+    "error InvalidLaunchConfigId()",
+    "error InvalidLaunchEconomics()",
+    "error InvalidTokenParams()",
+    "error LaunchConfigDisabled()",
+    "error LaunchDependenciesNotWired()",
+    "error LaunchDeployerNotSet()",
+    "error LaunchEconomicsMismatch()",
+    "error LaunchFeeNotPaid()",
+    "error MetadataTooLong()",
+    "error MinimumOutputRequired()",
+    "error NativeValueMismatch()",
+    "error NotWhitelisted()",
+    "error PairTokenDecimalsMismatch()",
+    "error PairTokenNotApproved()",
+    "error SlippageExceeded()",
+    "error SupplyTooHigh()",
+    "error SupplyTooLow()",
+    "error TransferFailed()",
+    "error UnexpectedNativeValue()",
+    "error ReentrancyGuardReentrantCall()",
+  ],
+
   // Pons V2 launch factory (subset used by SCOTY)
   factoryAbi: [
     "function launchFee() view returns (uint256)",
