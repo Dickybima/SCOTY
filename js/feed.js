@@ -83,6 +83,7 @@
       const k = t.address.toLowerCase();
       map.set(k, map.has(k) ? { ...map.get(k), description: t.description, image: map.get(k).image || t.image, twitter: t.twitter, website: t.website, mine: true } : t);
     }
+    for (const a of CFG.hiddenTokens || []) map.delete(String(a).toLowerCase());
     const me = W.address && W.address.toLowerCase();
     return [...map.values()].map((t) => ({ ...t, mine: t.mine || (me && t.creator && t.creator.toLowerCase() === me) }));
   }

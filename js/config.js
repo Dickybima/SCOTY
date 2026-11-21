@@ -31,6 +31,11 @@ window.SCOTY_CONFIG = {
   // ("SCOTY" in hex). Explore only lists launches carrying this marker.
   launchTag: "0x53434f5459",
 
+  // Token addresses hidden from Explore and Profile (e.g. test launches).
+  // They still exist on-chain; this only keeps them off SCOTY's lists.
+  hiddenTokens: [
+  ],
+
   // Pons V2 metadata caps (PonsV2LaunchDeployer, in bytes). Longer strings
   // revert the launch with MetadataTooLong.
   limits: { name: 64, symbol: 16, logo: 512, description: 2048, social: 256 },
