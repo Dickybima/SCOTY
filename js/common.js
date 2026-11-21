@@ -9,18 +9,29 @@
   const short = (a) => (a ? a.slice(0, 6) + "…" + a.slice(-4) : "");
 
   // ── Layout ──────────────────────────────────────────────────
+  const navLinks = `
+      <a href="index.html" class="${page === "explore" ? "on" : ""}">Explore</a>
+      <a href="create.html" class="${page === "create" ? "on" : ""}">Create</a>
+      <a href="profile.html" class="${page === "profile" ? "on" : ""}">Profile</a>
+      <a href="docs.html" class="${page === "docs" ? "on" : ""}">Docs</a>`;
   document.getElementById("nav").outerHTML = `
   <header class="nav"><div class="wrap nav-in">
     <a href="index.html" class="brand"><img class="brand-mark" src="assets/logo.png" alt="">SCOTY</a>
     <span class="tag">${CFG.network}</span>
-    <nav class="menu">
-      <a href="index.html" class="${page === "explore" ? "on" : ""}">Explore</a>
-      <a href="create.html" class="${page === "create" ? "on" : ""}">Create</a>
-      <a href="profile.html" class="${page === "profile" ? "on" : ""}">Profile</a>
-      <a href="docs.html" class="${page === "docs" ? "on" : ""}">Docs</a>
+    <nav class="menu">${navLinks}
     </nav>
     <button class="wallet" id="walletBtn"><span class="dot"></span><span id="walletLbl">Connect Wallet</span></button>
-  </div></header>`;
+    <button class="menu-toggle" id="menuToggle" type="button" aria-label="Toggle menu" aria-expanded="false">
+      <svg class="ic-menu" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+      <svg class="ic-x" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+  </div>
+  <nav class="mobile-menu" id="mobileMenu">${navLinks}
+  </nav></header>`;
+  {
+    const t = document.getElementById("menuToggle"), mm = document.getElementById("mobileMenu");
+    t.onclick = () => { const open = mm.classList.toggle("open"); t.classList.toggle("open", open); t.setAttribute("aria-expanded", open); };
+  }
 
   document.getElementById("footer").outerHTML = `
   <footer class="foot">
@@ -56,7 +67,7 @@
   document.body.insertAdjacentHTML("beforeend", `
     <div class="modal" id="walletPicker"><div class="sheet wsheet">
       <button class="close" aria-label="Close">✕</button>
-      <h3 style="font-family:'Space Grotesk';font-size:1.3rem;margin-bottom:4px">Connect a wallet</h3>
+      <h3 style="font-size:1.3rem;margin-bottom:4px">Connect a wallet</h3>
       <p class="status" style="margin:0 0 16px">Choose the wallet you want to use on ${CFG.network}.</p>
       <div id="wlist" class="wlist"></div>
       <p class="fine" style="margin-top:16px">By connecting you agree to the Terms of Use. SCOTY never holds your funds.</p>
@@ -212,7 +223,7 @@
       : shapes === "rect"
       ? `<rect x="-10" y="58" width="140" height="60" transform="rotate(-18 60 60)" fill="#fff" opacity=".16"/>`
       : `<path d="M10 90 Q40 40 70 70 T130 40 V130 H-10Z" fill="#fff" opacity=".18"/>`;
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g${h}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${a} 85% 60%)"/><stop offset="1" stop-color="hsl(${b} 85% 52%)"/></linearGradient></defs><rect width="120" height="120" fill="url(#g${h})"/>${deco}<text x="60" y="${Math.round(60 + fs * 0.36)}" text-anchor="middle" font-family="Space Grotesk,Arial,sans-serif" font-weight="700" font-size="${fs}" letter-spacing="-0.5" fill="#fff">${glyph}</text></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g${h}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${a} 85% 60%)"/><stop offset="1" stop-color="hsl(${b} 85% 52%)"/></linearGradient></defs><rect width="120" height="120" fill="url(#g${h})"/>${deco}<text x="60" y="${Math.round(60 + fs * 0.36)}" text-anchor="middle" font-family="Poppins,Arial,sans-serif" font-weight="700" font-size="${fs}" letter-spacing="-0.5" fill="#fff">${glyph}</text></svg>`;
   }
   const logoHTML = (t) => (t.image ? `<img src="${t.image}" alt="">` : logoSVG(t.symbol + t.name, t.symbol));
 
