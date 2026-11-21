@@ -136,10 +136,20 @@
     try {
       const blob = file.type === "image/gif" && file.size <= 1024 * 1024 ? file : await toSquareImage(file);
       $("logo").innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="logo">`;
-      const r = await fetch(CFG.uploadUrl, { method: "POST", headers: { "content-type": blob.type }, body: blob });
-      let data = {};
+      let r, data = {};
+      try { r = await fetch(CFG.uploadUrl, { method: "POST", headers: { "content-type": blob.type }, body: blob }); }
+      catch (_) { throw new Error("Couldn't reach the upload service. Check your connection, or paste an image link instead."); }
       try { data = await r.json(); } catch (_) {}
-      if (!r.ok || !data.url) throw new Error(data.error || (r.status === 404 ? "Image uploads aren't set up on this site yet. Paste an image link instead." : "Upload failed. Please try again."));
+      if (!r.ok || !data.url) {
+        console.warn("upload failed", r.status, data);
+        // say exactly what is wrong, so the site owner can fix it
+        const why =
+          r.status === 404 ? "the upload service isn't deployed on this site (api/upload not found)" :
+          data.code === "NO_BLOB_TOKEN" ? "image storage isn't connected yet (Vercel Blob)" :
+          data.code === "BLOB_ERROR" ? "image storage rejected the file" + (data.detail ? ": " + data.detail : "") :
+          data.error || "error " + r.status;
+        throw new Error(r.status === 413 || r.status === 415 || r.status === 400 ? data.error : `Upload isn't available: ${why}. Paste an image link instead.`);
+      }
       $("logoUrl").value = data.url;
       $("logoUrl").dispatchEvent(new Event("input"));
       note.className = "note"; note.textContent = "✓ Image uploaded. It will be your token logo.";

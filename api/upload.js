@@ -20,12 +20,23 @@ function sniff(b) {
   return null;
 }
 
+// The Blob integration normally adds BLOB_READ_WRITE_TOKEN, but a custom prefix can
+// rename it (e.g. SCOTY_READ_WRITE_TOKEN). Blob tokens always start with vercel_blob_rw_.
+function blobToken() {
+  if (process.env.BLOB_READ_WRITE_TOKEN) return { name: "BLOB_READ_WRITE_TOKEN", value: process.env.BLOB_READ_WRITE_TOKEN };
+  for (const [name, value] of Object.entries(process.env)) {
+    if (typeof value === "string" && value.startsWith("vercel_blob_rw_")) return { name, value };
+  }
+  return null;
+}
+
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 
 export async function POST(request) {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return json({ error: "Image uploads aren't set up on this site yet. Paste an image link instead." }, 503);
+  const token = blobToken();
+  if (!token) {
+    return json({ error: "Image uploads aren't set up on this site yet.", code: "NO_BLOB_TOKEN" }, 503);
   }
   const declared = Number(request.headers.get("content-length") || 0);
   if (declared > MAX_BYTES) return json({ error: "Image is larger than 1 MB." }, 413);
@@ -43,15 +54,21 @@ export async function POST(request) {
       contentType: type,
       addRandomSuffix: true,
       cacheControlMaxAge: 31536000,
+      token: token.value,
     });
     return json({ url: blob.url });
   } catch (e) {
     console.error("upload failed", e);
-    return json({ error: "Upload failed. Please try again." }, 502);
+    return json({ error: "Upload failed. Please try again.", code: "BLOB_ERROR", detail: String((e && e.message) || e).slice(0, 200) }, 502);
   }
 }
 
-// GET /api/upload → whether uploads are configured (the studio uses this to show the button)
+// GET /api/upload → quick health check: open it in a browser to see if uploads are on
 export function GET() {
-  return json({ enabled: !!process.env.BLOB_READ_WRITE_TOKEN });
+  const token = blobToken();
+  return json({
+    enabled: !!token,
+    tokenVariable: token ? token.name : null,
+    hint: token ? "Uploads are ready." : "Connect a Vercel Blob store to this project (Storage → Blob → Connect), then redeploy.",
+  });
 }
