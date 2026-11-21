@@ -1,5 +1,5 @@
 (function () {
-  const { CFG, W, Feed, logoHTML, tokenUrl, esc, fmtUsd, ago, short } = window.SCOTY;
+  const { CFG, W, Feed, logoHTML, tokenUrl, readProvider, imgSrc, esc, fmtUsd, ago, short } = window.SCOTY;
   const $ = (id) => document.getElementById(id);
   const chain = CFG.chains[0];
 
@@ -45,7 +45,7 @@
         <div class="tok-top">
           <div class="logo">${logoHTML(t)}</div>
           <div><b>${esc(t.name)}</b><small>$${esc(t.symbol)} · ${ago(t.createdAt)}</small></div>
-          ${t.mine ? `<span class="chip mine">${t.demo ? "yours · demo" : "yours"}</span>` : ""}
+          ${isOfficial(t.address) ? '<span class="chip official">⚓ official</span>' : t.mine ? `<span class="chip mine">${t.demo ? "yours · demo" : "yours"}</span>` : ""}
         </div>
         <p>${esc(t.description || "Launched on Robinhood Chain · " + short(t.address))}</p>
         <div class="meta"><span>MC ${t.mcap ? fmtUsd(t.mcap) : "—"}</span><span>${t.holders ? t.holders + " holders" : "new"}</span></div>
@@ -76,6 +76,68 @@
   }));
   W.onChange(() => { stats(); render(); });
 
+  // ── Official $SCOTY, featured at the top ───────────────────
+  const OFFICIAL = (CFG.officialToken || "").toLowerCase();
+  function isOfficial(a) { return !!OFFICIAL && !!a && a.toLowerCase() === OFFICIAL; }
+  async function loadOfficial() {
+    if (!OFFICIAL || !window.ethers || !/^0x[0-9a-f]{40}$/.test(OFFICIAL)) return;
+    const el = $("official");
+    const addr = ethers.getAddress(OFFICIAL);
+    const href = tokenUrl(addr);
+    const paint = (d) => {
+      const pg = d.progress == null ? null : Math.min(100, d.progress);
+      el.innerHTML = `
+        <a class="off-logo" href="${href}">${d.logo ? `<img src="${esc(imgSrc(d.logo))}" alt="">` : '<img src="assets/logo.png?v=2" alt="">'}</a>
+        <div class="off-main">
+          <span class="off-badge">⚓ Official token</span>
+          <a class="off-name" href="${href}">${esc(d.name || "SCOTY")} <span>$${esc(d.symbol || "SCOTY")}</span></a>
+          <div class="off-stats">
+            <div><small>Market cap</small><b>${d.mcap ? fmtUsd(d.mcap) : "—"}</b></div>
+            <div><small>Price</small><b>${d.price ? "$" + (d.price >= 1 ? d.price.toFixed(2) : d.price.toPrecision(3)) : "—"}</b></div>
+            <div><small>Holders</small><b>${d.holders ? d.holders.toLocaleString("en-US") : "—"}</b></div>
+            <div><small>Bonding</small><b>${d.graduated ? "Graduated" : pg == null ? "—" : pg.toFixed(1) + "%"}</b></div>
+          </div>
+          ${!d.graduated && pg != null ? `<div class="pgbar"><i style="width:${pg}%"></i></div>` : ""}
+        </div>
+        <div class="off-cta">
+          <a class="btn btn-main" href="${href}">Trade $${esc(d.symbol || "SCOTY")} →</a>
+          <button class="btn" type="button" id="offCa">Copy CA</button>
+          <span class="off-ca mono">${short(addr)}</span>
+        </div>`;
+      el.hidden = false;
+      $("offCa").onclick = (e) => { navigator.clipboard?.writeText(addr); e.target.textContent = "Copied!"; setTimeout(() => (e.target.textContent = "Copy CA"), 1200); };
+    };
+    paint({ symbol: "SCOTY" });
+    const d = {};
+    try {
+      const rp = readProvider(chain);
+      const token = new ethers.Contract(addr, CFG.tokenAbi, rp);
+      const factory = new ethers.Contract(chain.factory, CFG.factoryAbi, rp);
+      const [name, symbol, info, lt] = await Promise.all([
+        token.name().catch(() => null), token.symbol().catch(() => null),
+        token.getTokenInfo().catch(() => null), factory.getLaunchedToken(addr).catch(() => null),
+      ]);
+      Object.assign(d, { name, symbol, logo: info && Feed.safeImg(info.tokenLogo) });
+      if (lt && lt.exists) {
+        d.graduated = Number(lt.phase) > 0;
+        const c = new ethers.Contract(lt.curve, CFG.curveAbi, rp);
+        const [res, raised, threshold, supply, stats, tok] = await Promise.all([
+          c.getReserves(), c.realQuoteReserve(), c.graduationThreshold(), token.totalSupply().catch(() => 10n ** 27n),
+          Feed.getJSON(`${chain.explorerApi}/stats`).catch(() => ({})), Feed.getJSON(`${chain.explorerApi}/tokens/${addr}`).catch(() => ({})),
+        ]);
+        const ethUsd = Number(stats.coin_price || 0);
+        const pEth = Number(res[1]) > 0 ? Number(res[0]) / Number(res[1]) : 0;
+        d.price = pEth * ethUsd;
+        d.mcap = d.price * Number(ethers.formatUnits(supply, 18));
+        d.progress = threshold > 0n ? (Number(raised) / Number(threshold)) * 100 : null;
+        d.holders = Number(tok.holders_count || 0);
+      }
+    } catch (e) { console.warn("official token unavailable", e); }
+    paint(d);
+  }
+
   stats(); render(); openFromUrl();
+  loadOfficial();
   loadFeed();
+
 })();

@@ -31,6 +31,9 @@ window.SCOTY_CONFIG = {
   // ("SCOTY" in hex). Explore only lists launches carrying this marker.
   launchTag: "0x53434f5459",
 
+  // The official $SCOTY token, featured at the top of Explore
+  officialToken: "0x0ded4ceab711ce02be7fe64f6a51bf4439fb6d44",
+
   // Token addresses hidden from Explore and Profile (e.g. test launches).
   // They still exist on-chain; this only keeps them off SCOTY's lists.
   hiddenTokens: [
