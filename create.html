@@ -27,11 +27,21 @@
 
     <!-- 01 -->
     <section class="panel">
-      <div class="step-h"><span class="num">01</span><h3>Describe your idea</h3></div>
-      <input class="input" id="idea" maxlength="160" placeholder="e.g. a cat coin that trades memes from the couch">
-      <div class="row">
-        <button class="btn" id="roulette" type="button">🎲 Roulette</button>
-        <button class="btn btn-main" id="generate" type="button" disabled>✦ Generate</button>
+      <div class="step-h"><span class="num">01</span><h3>How do you want to start?</h3></div>
+      <div class="modes" id="modes">
+        <button type="button" data-m="gen" class="on"><b>✦ Generate</b><small>Describe it in one sentence and SCOTY drafts the rest</small></button>
+        <button type="button" data-m="manual"><b>✎ Manual</b><small>Fill in your own name, ticker and logo</small></button>
+      </div>
+      <div id="genBox">
+        <input class="input" id="idea" maxlength="160" placeholder="e.g. a cat coin that trades memes from the couch">
+        <div class="row">
+          <button class="btn" id="roulette" type="button">🎲 Roulette</button>
+          <button class="btn btn-main" id="generate" type="button" disabled>✦ Generate</button>
+        </div>
+      </div>
+      <div id="manualBox" hidden>
+        <p class="note" style="margin-top:0">You'll write the name, ticker and description yourself, and upload your own logo.</p>
+        <div class="row"><button class="btn btn-main" id="startManual" type="button">✎ Start from scratch</button></div>
       </div>
     </section>
 
@@ -43,6 +53,7 @@
           <div class="logo" id="logo"></div>
           <label class="btn btn-sm" id="uploadBtn">⬆ Upload image<input type="file" id="upload" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label>
           <button class="btn btn-sm" id="reroll" type="button">↻ New look</button>
+          <small class="logo-req" id="logoReq" hidden>Logo required</small>
         </div>
         <div>
           <div class="grid2">
@@ -51,7 +62,7 @@
           </div>
           <label class="lbl" for="desc">Description</label>
           <textarea class="textarea" id="desc" maxlength="1000"></textarea>
-          <label class="lbl" for="logoUrl">Logo image link <span class="opt">optional</span></label>
+          <label class="lbl" for="logoUrl">Logo image link <span class="opt" id="logoOpt">optional</span></label>
           <input class="input" id="logoUrl" placeholder="https://… or ipfs://…  (leave empty to use the generated logo)">
           <p class="note" id="logoNote">Upload your own image, paste an image link, or keep the generated logo.</p>
           <div class="grid2">

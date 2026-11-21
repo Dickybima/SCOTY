@@ -56,6 +56,7 @@
       $("desc").value = p.desc;
       state.image = null;
       state.seed = p.symbol + p.name;
+      state.mode = "gen";
       ["p2", "p3", "p4"].forEach((id) => $(id).classList.remove("locked"));
       renderLogo(); renderSummary();
       btn.disabled = false;
@@ -67,8 +68,37 @@
   // ── Step 02 ───────────────────────────────────────────────
   function renderLogo() {
     const link = logoLink();
+    const manual = state.mode === "manual";
+    $("reroll").hidden = manual;
+    $("logoOpt").hidden = manual;
+    $("logoUrl").placeholder = manual ? "https://… or ipfs://…  (or use Upload image)" : "https://… or ipfs://…  (leave empty to use the generated logo)";
+    $("logoReq").hidden = !manual || !!link;
+    $("logo").classList.toggle("logo-empty", manual && !link);
+    if (manual && !link) {
+      $("logo").innerHTML = `<label class="logo-drop" for="upload"><span>⬆</span>Upload your logo</label>`;
+      return;
+    }
     $("logo").innerHTML = `<img src="${esc(link ? imgSrc(link) : logoDataUri(state.seed, $("symbol").value))}" alt="logo">`;
   }
+
+  // ── Mode: Generate or Manual ───────────────────────────────
+  state.mode = "gen";
+  function setMode(m) {
+    $("modes").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.m === m));
+    $("genBox").hidden = m !== "gen";
+    $("manualBox").hidden = m !== "manual";
+  }
+  $("modes").querySelectorAll("button").forEach((b) => (b.onclick = () => setMode(b.dataset.m)));
+  $("startManual").onclick = () => {
+    state.mode = "manual";
+    state.seed = Math.random().toString(36);
+    ["name", "symbol", "desc", "logoUrl"].forEach((id) => ($(id).value = ""));
+    $("logoUrl").dispatchEvent(new Event("input"));
+    ["p2", "p3", "p4"].forEach((id) => $(id).classList.remove("locked"));
+    renderLogo(); renderSummary();
+    $("p2").scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => $("name").focus({ preventScroll: true }), 400);
+  };
   $("symbol").addEventListener("input", (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); renderLogo(); renderSummary(); });
   ["name", "desc"].forEach((id) => $(id).addEventListener("input", renderSummary));
   $("reroll").onclick = () => { $("logoUrl").value = ""; state.seed = Math.random().toString(36); renderLogo(); };
@@ -123,7 +153,7 @@
 
   $("logoUrl").addEventListener("input", () => {
     const v = $("logoUrl").value.trim(), note = $("logoNote");
-    if (!v) { note.className = "note"; note.textContent = "Upload your own image, paste an image link, or keep the generated logo."; }
+    if (!v) { note.className = "note"; note.textContent = state.mode === "manual" ? "Upload your logo or paste an image link (https:// or ipfs://)." : "Upload your own image, paste an image link, or keep the generated logo."; }
     else if (!/^(https:\/\/|ipfs:\/\/)/i.test(v)) { note.className = "note bad"; note.textContent = "Use a link that starts with https:// or ipfs://"; }
     else if (byteLen(v) > CFG.limits.logo) { note.className = "note bad"; note.textContent = `That link is ${byteLen(v)} bytes; Pons allows ${CFG.limits.logo}.`; }
     else { note.className = "note"; note.textContent = "Using your image link as the token logo."; }
@@ -264,6 +294,7 @@
     btn.disabled = true;
     const chain = state.chain;
     if ($("logoUrl").value.trim() && !logoLink()) { btn.disabled = false; return setStatus("Logo link must start with https:// or ipfs:// and be at most 512 bytes.", "err"); }
+    if (state.mode === "manual" && !logoLink()) { btn.disabled = false; $("logoReq").hidden = false; return setStatus("Upload your logo (or paste an image link) before launching.", "err"); }
     const logo = logoLink() || logoDataUri(state.seed, symbol);
     const socials = { twitter: $("x").value.trim(), telegram: "", discord: "", website: $("web").value.trim(), farcaster: "" };
     const problem = metadataProblem({ name, symbol, logo, description: desc, socials });

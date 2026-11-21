@@ -445,3 +445,17 @@ a.txrow:hover{background:rgba(31,41,55,.35)}
 
 #uploadBtn{cursor:pointer}
 #uploadBtn.busy{opacity:.6;pointer-events:none}
+
+/* create: Generate / Manual */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.modes button{text-align:left;padding:14px 16px;border-radius:14px;border:1px solid var(--line2);background:rgba(0,0,0,.45);color:var(--muted);cursor:pointer;transition:border-color .2s,background .2s}
+.modes button b{display:block;color:#fff;font-weight:600;font-size:1rem;margin-bottom:2px}
+.modes button small{font-size:.8rem;line-height:1.35}
+.modes button:hover{border-color:#4b5563}
+.modes button.on{border-color:var(--accent);background:rgba(190,253,8,.06);box-shadow:0 0 0 3px rgba(190,253,8,.08)}
+.logo.logo-empty{border:1.5px dashed #4b5563;background:rgba(0,0,0,.4)}
+.logo-drop{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);font-size:.85rem;cursor:pointer;text-align:center}
+.logo-drop span{font-size:1.6rem;color:var(--accent)}
+.logo-drop:hover{color:#fff}
+.logo-req{color:var(--bad);font-size:.8rem;font-weight:600}
+@media (max-width:560px){.modes{grid-template-columns:1fr}}
