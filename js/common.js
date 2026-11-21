@@ -251,8 +251,15 @@
     return new TextEncoder().encode(full).length <= (CFG.limits ? CFG.limits.logo : 512) ? full : build("");
   }
   // ipfs:// links shown through a public gateway
+  // Read-only provider: the connected wallet when it is on our chain, else the public RPC
+  function readProvider(chain) {
+    chain = chain || CFG.chains[0];
+    if (W.provider && W.chainId === chain.chainId && window.ethers) return new ethers.BrowserProvider(W.provider);
+    return new ethers.JsonRpcProvider(chain.rpc, chain.chainId, { staticNetwork: true });
+  }
+  const tokenUrl = (address) => "token.html?address=" + address;
   const imgSrc = (u) => (typeof u === "string" && u.startsWith("ipfs://") ? "https://ipfs.io/ipfs/" + u.slice(7) : u);
   const logoHTML = (t) => (t.image ? `<img src="${esc(imgSrc(t.image))}" alt="">` : logoSVG(t.symbol + t.name, t.symbol));
 
-  window.SCOTY = { CFG, W, Store, logoSVG, logoDataUri, logoHTML, imgSrc, esc, fmtUsd, ago, short, hash };
+  window.SCOTY = { CFG, W, Store, logoSVG, logoDataUri, logoHTML, imgSrc, readProvider, tokenUrl, esc, fmtUsd, ago, short, hash };
 })();

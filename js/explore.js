@@ -1,5 +1,5 @@
 (function () {
-  const { CFG, W, Feed, logoHTML, esc, fmtUsd, ago, short } = window.SCOTY;
+  const { CFG, W, Feed, logoHTML, tokenUrl, esc, fmtUsd, ago, short } = window.SCOTY;
   const $ = (id) => document.getElementById(id);
   const chain = CFG.chains[0];
 
@@ -52,43 +52,18 @@
           : q ? "No tokens match your search."
           : (feedError ? "Couldn't reach the Robinhood Chain explorer right now. " : "") + 'No tokens yet. <a href="create.html" style="color:var(--accent);font-weight:600">Be the first to launch →</a>'}</div>`;
 
-    $("tokens").querySelectorAll(".tok").forEach((b) => (b.onclick = () => open(l[+b.dataset.i])));
+    $("tokens").querySelectorAll(".tok").forEach((b) => (b.onclick = () => (location.href = tokenUrl(l[+b.dataset.i].address))));
   }
 
-  function open(t) {
-    const link = (u, txt) => (u ? `<a class="btn btn-sm" href="${esc(u)}" target="_blank" rel="noopener">${txt}</a>` : "");
-    $("sheet").innerHTML = `
-      <button class="close" aria-label="Close">✕</button>
-      <div class="tok-top"><div class="logo">${logoHTML(t)}</div><div><b style="font-size:1.4rem">${esc(t.name)}</b><small>$${esc(t.symbol)} · ${esc(chain.name)}</small></div></div>
-      ${t.description ? `<p style="color:var(--muted);margin:10px 0 14px">${esc(t.description)}</p>` : '<div style="height:12px"></div>'}
-      <div class="summary">
-        <div><span>Market cap</span> ${t.mcap ? fmtUsd(t.mcap) : "—"}</div>
-        <div><span>Holders   </span> ${t.holders || "—"}</div>
-        <div><span>Creator   </span> ${short(t.creator) || "—"}</div>
-        <div><span>Launched  </span> ${ago(t.createdAt)}</div>
-      </div>
-      <div class="addr">${esc(t.address)}</div>
-      <div class="row">${t.demo ? "" : link(`${chain.explorer}/token/${t.address}`, "Explorer ↗")}${t.tx && !t.demo ? link(`${chain.explorer}/tx/${t.tx}`, "Launch tx ↗") : ""}${link(t.twitter, "X ↗")}${link(t.website, "Website ↗")}
-        <button class="btn btn-sm" id="copy">Copy address</button></div>
-      <div class="trade">
-        <button class="btn btn-main" disabled title="Trading coming soon">Buy</button>
-        <button class="btn btn-dark" disabled title="Trading coming soon">Sell</button>
-      </div>
-      ${t.demo ? '<p class="status">Demo launch — not on-chain.</p>' : '<p class="status">Live on Robinhood Chain.</p>'}`;
-    $("modal").classList.add("open");
-    $("sheet").querySelector(".close").onclick = close;
-    $("copy").onclick = (e) => { navigator.clipboard?.writeText(t.address); e.target.textContent = "Copied!"; };
-  }
   const close = () => $("modal").classList.remove("open");
   $("modal").addEventListener("click", (e) => { if (e.target.id === "modal") close(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
 
   let opened = false;
   function openFromUrl() {
+    // old links (?token=0x…) now open the token page
     const a = new URLSearchParams(location.search).get("token");
-    if (!a || opened) return;
-    const t = all().find((x) => x.address.toLowerCase() === a.toLowerCase());
-    if (t) { opened = true; open(t); }
+    if (a && /^0x[0-9a-fA-F]{40}$/.test(a)) location.replace(tokenUrl(a));
   }
 
   $("q").addEventListener("input", render);

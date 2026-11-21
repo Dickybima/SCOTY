@@ -1,0 +1,9 @@
+{
+  "name": "scoty",
+  "private": true,
+  "type": "module",
+  "description": "SCOTY — the one-sentence token launchpad. Static site plus one Vercel function (api/upload.js).",
+  "dependencies": {
+    "@vercel/blob": "2.8.0"
+  }
+}

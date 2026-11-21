@@ -41,6 +41,7 @@
       <div class="pkg">
         <div class="logo-box">
           <div class="logo" id="logo"></div>
+          <label class="btn btn-sm" id="uploadBtn">⬆ Upload image<input type="file" id="upload" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label>
           <button class="btn btn-sm" id="reroll" type="button">↻ New look</button>
         </div>
         <div>
@@ -52,7 +53,7 @@
           <textarea class="textarea" id="desc" maxlength="1000"></textarea>
           <label class="lbl" for="logoUrl">Logo image link <span class="opt">optional</span></label>
           <input class="input" id="logoUrl" placeholder="https://… or ipfs://…  (leave empty to use the generated logo)">
-          <p class="note" id="logoNote">Pons stores the logo on-chain as a link (max 512 bytes). Paste a link to a hosted image, or keep the generated logo.</p>
+          <p class="note" id="logoNote">Upload your own image, paste an image link, or keep the generated logo.</p>
           <div class="grid2">
             <div><label class="lbl" for="x">X / Twitter (optional)</label><input class="input" id="x" placeholder="https://x.com/…"></div>
             <div><label class="lbl" for="web">Website (optional)</label><input class="input" id="web" placeholder="https://…"></div>

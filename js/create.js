@@ -77,9 +77,53 @@
     const v = $("logoUrl").value.trim();
     return /^(https:\/\/|ipfs:\/\/)\S+$/i.test(v) && byteLen(v) <= CFG.limits.logo ? v : "";
   }
+  // Upload: crop to a square, resize to 512 px WebP, store via /api/upload, use the returned link
+  function toSquareImage(file, size = 512) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement("canvas");
+        c.width = c.height = size;
+        const s = Math.min(img.naturalWidth, img.naturalHeight);
+        c.getContext("2d").drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        c.toBlob((b) => (b && b.type === "image/webp" ? resolve(b) : c.toBlob((p) => (p ? resolve(p) : reject(new Error("Couldn't read that image."))), "image/png")), "image/webp", 0.88);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("That file isn't an image we can read.")); };
+      img.src = url;
+    });
+  }
+  $("upload").addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const note = $("logoNote"), btn = $("uploadBtn");
+    if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) { note.className = "note bad"; note.textContent = "Use a PNG, JPEG, WebP or GIF image."; return; }
+    if (file.size > 15 * 1024 * 1024) { note.className = "note bad"; note.textContent = "That image is over 15 MB."; return; }
+    btn.classList.add("busy");
+    note.className = "note"; note.textContent = "Uploading your image…";
+    try {
+      const blob = file.type === "image/gif" && file.size <= 1024 * 1024 ? file : await toSquareImage(file);
+      $("logo").innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="logo">`;
+      const r = await fetch(CFG.uploadUrl, { method: "POST", headers: { "content-type": blob.type }, body: blob });
+      let data = {};
+      try { data = await r.json(); } catch (_) {}
+      if (!r.ok || !data.url) throw new Error(data.error || (r.status === 404 ? "Image uploads aren't set up on this site yet. Paste an image link instead." : "Upload failed. Please try again."));
+      $("logoUrl").value = data.url;
+      $("logoUrl").dispatchEvent(new Event("input"));
+      note.className = "note"; note.textContent = "✓ Image uploaded. It will be your token logo.";
+    } catch (err) {
+      note.className = "note bad"; note.textContent = err.message;
+      renderLogo();
+    } finally {
+      btn.classList.remove("busy");
+    }
+  });
+
   $("logoUrl").addEventListener("input", () => {
     const v = $("logoUrl").value.trim(), note = $("logoNote");
-    if (!v) { note.className = "note"; note.textContent = "Pons stores the logo on-chain as a link (max 512 bytes). Paste a link to a hosted image, or keep the generated logo."; }
+    if (!v) { note.className = "note"; note.textContent = "Upload your own image, paste an image link, or keep the generated logo."; }
     else if (!/^(https:\/\/|ipfs:\/\/)/i.test(v)) { note.className = "note bad"; note.textContent = "Use a link that starts with https:// or ipfs://"; }
     else if (byteLen(v) > CFG.limits.logo) { note.className = "note bad"; note.textContent = `That link is ${byteLen(v)} bytes; Pons allows ${CFG.limits.logo}.`; }
     else { note.className = "note"; note.textContent = "Using your image link as the token logo."; }
@@ -293,8 +337,8 @@
       }
       Store.add({ name, symbol, description: desc, image: logo, twitter: socials.twitter, website: socials.website,
         address, curve, tx, chain: chain.key, creator: W.address, createdAt: Date.now(), mcap: 0, change: 0, progress: 0, mine: true, demo: !chain.factory });
-      setStatus(`✅ $${esc(symbol)} is live${chain.factory ? "" : " (demo)"}!${boughtNote} Taking you to Explore…`, "ok");
-      setTimeout(() => (location.href = "index.html?token=" + address), boughtNote ? 3500 : 1500);
+      setStatus(`✅ $${esc(symbol)} is live${chain.factory ? "" : " (demo)"}!${boughtNote} Opening your token page…`, "ok");
+      setTimeout(() => (location.href = "token.html?address=" + address), boughtNote ? 3500 : 1500);
     } catch (e) {
       console.error(e);
       setStatus("Launch failed: " + esc(launchError(e)), "err");

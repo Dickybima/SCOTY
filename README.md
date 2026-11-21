@@ -24,3 +24,17 @@ Settings live in `js/config.js`. Factory interface source: [kickpadfamily/contra
 ## Intro preloader
 
 `js/preloader.js` shows the "Venom Vial" pixel-art intro (a vanilla-JS port of the `venom-vial-preloader` React component) the first time the site is opened in a browser session. The widow carries the SCOTY anchor logo on her back. Click, tap or press Enter to hurry it; add `?intro=1` to any URL to replay it.
+
+## Token page
+
+`token.html?address=0x…` shows a live market-cap chart (from the curve's `CurveBuy`/`CurveSell` events via Blockscout), price, holders, bonding progress, recent trades, and a Buy/Sell box that trades on the Pons V2 curve (`buy` / `approve` + `sell`, 5% default slippage).
+
+## Logo uploads (Vercel)
+
+Pons stores a token logo on-chain as a string of at most 512 bytes, so uploaded images are hosted and only their URL goes on-chain. `api/upload.js` is a Vercel function that stores the image in **Vercel Blob**:
+
+1. Vercel dashboard → your project → **Storage** → **Create** → **Blob**, and connect it to the project (this adds `BLOB_READ_WRITE_TOKEN`).
+2. Redeploy.
+
+Until that is done the Upload button tells creators to paste an image link instead.
+

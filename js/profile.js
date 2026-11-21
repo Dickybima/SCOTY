@@ -122,7 +122,7 @@
       if (!positions) { body.innerHTML = '<div class="empty">Loading positions…</div>'; return; }
       if (!positions.length) { body.innerHTML = '<div class="empty">No token positions yet. <a href="index.html">Explore tokens →</a></div>'; return; }
       body.innerHTML = `<div class="plist">${positions.map((p) => `
-        <a class="prow" href="${chain.explorer}/token/${esc(p.address)}" target="_blank" rel="noopener">
+        <a class="prow" href="token.html?address=${esc(p.address)}">
           <div class="logo">${logoHTML(p)}</div>
           <div class="prow-main"><b>${esc(p.name)}</b><small>${fmtNum(p.amount, 2)} ${esc(p.symbol)}</small></div>
           <span class="mono">${p.value ? usd(p.value) : "—"}</span>
@@ -136,7 +136,7 @@
           <div class="lcard-txt"><b>${esc(t.name)}</b><small>$${esc(t.symbol)} · ${ago(t.createdAt)}</small>
           <span class="mono">${t.mcap ? "MC " + fmtUsd(t.mcap) : "new"}${t.holders ? " · " + t.holders + " holders" : ""}</span></div>
         </button>`).join("")}</div>`;
-      body.querySelectorAll(".lcard").forEach((b) => (b.onclick = () => (location.href = "index.html?token=" + launches[+b.dataset.i].address)));
+      body.querySelectorAll(".lcard").forEach((b) => (b.onclick = () => (location.href = "token.html?address=" + launches[+b.dataset.i].address)));
     }
   }
 

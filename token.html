@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token — SCOTY</title>
+<meta name="description" content="Trade a token launched on SCOTY: live chart, market cap, transactions, buy and sell.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/favicon.png?v=2">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=2">
+<meta name="theme-color" content="#000000">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="@Scotydotfun">
+<meta property="og:image" content="assets/logo.png?v=2">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="token">
+<script src="js/preloader.js"></script>
+<div id="nav"></div>
+
+<main>
+  <div class="wrap">
+    <a href="index.html" class="back">← Explore</a>
+
+    <div class="empty" id="tkMsg">Loading token…</div>
+
+    <div class="tk" id="tk" hidden>
+      <div class="tk-main">
+        <!-- header -->
+        <section class="panel tk-head">
+          <div class="logo" id="tkLogo"></div>
+          <div class="tk-id">
+            <h1 id="tkName">—</h1>
+            <div class="tk-sub"><span class="mono" id="tkSym"></span><span class="pill-s" id="tkPhase">On curve</span></div>
+            <div class="tk-links" id="tkLinks"></div>
+          </div>
+        </section>
+
+        <!-- stats -->
+        <section class="tk-stats">
+          <div class="stat"><small>Market cap</small><b id="stMcap">—</b><span id="stMcapEth"></span></div>
+          <div class="stat"><small>Price</small><b id="stPrice">—</b><span id="stPriceEth"></span></div>
+          <div class="stat"><small>Holders</small><b id="stHolders">—</b><span>&nbsp;</span></div>
+          <div class="stat"><small>Creator fee</small><b id="stTax">—</b><span id="stFee"></span></div>
+        </section>
+
+        <!-- chart -->
+        <section class="panel tk-chart">
+          <div class="tk-chart-h">
+            <div><small>Market cap</small><b id="chVal">—</b><span id="chDelta" class="delta"></span></div>
+            <small class="muted" id="chNote"></small>
+          </div>
+          <div class="chart" id="chart"></div>
+        </section>
+
+        <!-- bonding progress -->
+        <section class="panel tk-prog">
+          <div class="tk-prog-h"><b>Bonding curve</b><span class="mono" id="pgPct">0%</span></div>
+          <div class="pgbar"><i id="pgFill"></i></div>
+          <p class="note" id="pgNote">When the curve fills, the token graduates into a Uniswap v4 pool with permanently locked liquidity.</p>
+        </section>
+
+        <!-- trades -->
+        <section class="panel flush">
+          <div class="ptabs"><button class="on" type="button">Transactions</button></div>
+          <div class="pbody">
+            <div class="txt" id="txs"><div class="empty">Loading trades…</div></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- trade box -->
+      <aside class="tk-side">
+        <section class="panel trade-box" id="tradeBox">
+          <div class="seg" id="seg">
+            <button type="button" data-s="buy" class="on buy">Buy</button>
+            <button type="button" data-s="sell" class="sell">Sell</button>
+          </div>
+          <label class="lbl" for="amt"><span id="amtLbl">You pay</span><span class="bal" id="balLbl"></span></label>
+          <div class="amount">
+            <input class="input" id="amt" type="number" min="0" step="any" inputmode="decimal" placeholder="0.0">
+            <span class="unit" id="amtUnit">ETH</span>
+          </div>
+          <div class="chips" id="qChips"></div>
+          <div class="quote" id="quote">
+            <div><span>You receive</span><b id="qOut">—</b></div>
+            <div><span>Price impact</span><b id="qImpact">—</b></div>
+            <div><span>Fees</span><b id="qFees">—</b></div>
+            <div><span>Max slippage</span><b><select id="slip"><option value="100">1%</option><option value="300">3%</option><option value="500" selected>5%</option><option value="1000">10%</option></select></b></div>
+          </div>
+          <button class="btn btn-main wide" id="tradeBtn" type="button">Connect wallet</button>
+          <p class="status" id="tradeStatus"></p>
+        </section>
+        <section class="panel tk-about" id="about" hidden>
+          <b>About</b>
+          <p id="tkDesc"></p>
+          <div class="kv"><span>Token</span><a class="mono link" id="tkAddr" target="_blank" rel="noopener"></a></div>
+          <div class="kv"><span>Creator</span><a class="mono link" id="tkCreator"></a></div>
+          <div class="kv"><span>Curve</span><a class="mono link" id="tkCurve" target="_blank" rel="noopener"></a></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<div id="footer"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/token.js"></script>
+</body>
+</html>

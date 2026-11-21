@@ -374,3 +374,74 @@ main{animation:fadeIn .6s ease-out}
 .xbtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--line2);background:rgba(31,41,55,.5);color:#fff;transition:border-color .2s,background .2s}
 .xlink:hover .xbtn{border-color:#fff;background:#fff;color:#000}
 .note.bad{color:var(--bad)}
+
+/* ── token page ─────────────────────────────────────────────── */
+.back{display:inline-block;color:var(--muted);font-size:.9rem;margin-bottom:18px}
+.back:hover{color:#fff}
+.tk{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+.tk-main{min-width:0;display:grid;gap:16px}
+.tk-main .panel{margin:0}
+.tk-side{position:sticky;top:92px;display:grid;gap:16px}
+.tk-side .panel{margin:0}
+.tk-head{display:flex;gap:18px;align-items:center}
+.tk-head .logo{width:84px;height:84px;border-radius:20px;flex:none}
+.tk-id{min-width:0}
+.tk-id h1{font-size:1.7rem;font-weight:600;letter-spacing:-.03em;line-height:1.15;word-break:break-word}
+.tk-sub{display:flex;gap:10px;align-items:center;margin:4px 0 10px;color:var(--muted)}
+.pill-s{font-size:.72rem;font-weight:600;border-radius:999px;padding:2px 10px;border:1px solid rgba(190,253,8,.35);background:rgba(190,253,8,.08);color:var(--accent)}
+.pill-s.grad{border-color:#4b5563;background:rgba(31,41,55,.6);color:#fff}
+.tk-links{display:flex;gap:8px;flex-wrap:wrap}
+.tk-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tk-stats .stat b{font-size:1.15rem;color:#fff}
+.tk-stats .stat span{display:block;font:500 .75rem var(--mono);color:var(--soft);margin-top:2px;min-height:1em}
+.tk-chart-h{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:10px}
+.tk-chart-h small{display:block;color:var(--soft);font-size:.8rem}
+.tk-chart-h b{font:700 1.5rem var(--mono);margin-right:10px}
+.delta{font:600 .85rem var(--mono)}
+.delta.up{color:var(--accent)} .delta.down{color:var(--bad)}
+.chart{position:relative;height:260px}
+.chart-svg{width:100%;height:100%;display:block;cursor:crosshair}
+.chart-dot{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:currentColor;box-shadow:0 0 12px currentColor;pointer-events:none}
+.chart-y{position:absolute;right:0;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+.chart-y span{font:500 .72rem var(--mono);color:var(--soft);background:rgba(0,0,0,.55);padding:1px 6px;border-radius:6px}
+.chart-empty{height:100%;display:grid;place-items:center;color:var(--soft);border:1px dashed var(--line2);border-radius:14px}
+.tk-prog-h{display:flex;justify-content:space-between;margin-bottom:10px}
+.tk-prog-h .mono{color:var(--accent);font-weight:700}
+.pgbar{height:10px;border-radius:999px;background:#1f2937;overflow:hidden}
+.pgbar i{display:block;height:100%;background:linear-gradient(90deg,#8fc200,var(--accent));box-shadow:0 0 12px rgba(190,253,8,.5)}
+.txrow{display:grid;grid-template-columns:70px 1fr 1fr 1.1fr 90px;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);font-size:.88rem;align-items:center}
+.txrow:last-child{border-bottom:0}
+a.txrow:hover{background:rgba(31,41,55,.35)}
+.txhead{color:var(--soft);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em}
+.txrow .buy{color:var(--accent);font-weight:600}
+.txrow .sell{color:var(--bad);font-weight:600}
+.txrow .muted{color:var(--muted)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,0,0,.45);border:1px solid var(--line2);border-radius:12px;padding:5px;margin-bottom:6px}
+.seg button{border:0;background:none;color:var(--muted);font:600 .95rem Poppins,sans-serif;padding:10px;border-radius:9px;cursor:pointer}
+.seg button.on.buy{background:var(--accent);color:#000}
+.seg button.on.sell{background:var(--bad);color:#fff}
+.trade-box .lbl{display:flex;justify-content:space-between}
+.trade-box .bal{font:500 .78rem var(--mono);color:var(--soft)}
+.quote{display:grid;gap:8px;margin:16px 0;padding:14px;border-radius:12px;background:rgba(0,0,0,.45);border:1px solid var(--line2);font-size:.88rem}
+.quote div{display:flex;justify-content:space-between;color:var(--muted)}
+.quote b{color:#fff;font:600 .85rem var(--mono)}
+.quote b.warn{color:#ffd54a}
+.quote select{background:transparent;color:#fff;border:0;font:600 .85rem var(--mono);cursor:pointer}
+.quote select option{background:#111}
+.btn-main.sellbtn{background:linear-gradient(to bottom,#ff8080,#ff5c5c);color:#fff}
+.tk-about p{color:var(--muted);font-size:.9rem;margin:8px 0 12px;white-space:pre-wrap;word-break:break-word}
+.kv{display:flex;justify-content:space-between;font-size:.85rem;padding:6px 0;border-top:1px solid var(--line);color:var(--soft)}
+@media (max-width:980px){
+  .tk{grid-template-columns:1fr}
+  .tk-side{position:static}
+  .tk-stats{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:560px){
+  .txrow{grid-template-columns:52px 1fr 1fr 74px;font-size:.8rem}
+  .txrow span:nth-child(4){display:none}
+  .tk-head .logo{width:64px;height:64px}
+  .tk-id h1{font-size:1.35rem}
+}
+
+#uploadBtn{cursor:pointer}
+#uploadBtn.busy{opacity:.6;pointer-events:none}
