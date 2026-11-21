@@ -35,6 +35,7 @@ window.SCOTY_CONFIG = {
   // They still exist on-chain; this only keeps them off SCOTY's lists.
   hiddenTokens: [
     "0x1E1FAb33Cb083494003b40b0e84265cB62803aFb", // test launch
+    "0xb42f917eFfC056822F97f468fC3C87039E9C091c", // test launch
   ],
 
   // Pons V2 metadata caps (PonsV2LaunchDeployer, in bytes). Longer strings
