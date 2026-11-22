@@ -32,13 +32,14 @@ window.SCOTY_CONFIG = {
   launchTag: "0x53434f5459",
 
   // The official $SCOTY token, featured at the top of Explore
-  officialToken: "0x0ded4ceab711ce02be7fe64f6a51bf4439fb6d44",
+  officialToken: "",
 
   // Token addresses hidden from Explore and Profile (e.g. test launches).
   // They still exist on-chain; this only keeps them off SCOTY's lists.
   hiddenTokens: [
     "0x1E1FAb33Cb083494003b40b0e84265cB62803aFb", // test launch
     "0xb42f917eFfC056822F97f468fC3C87039E9C091c", // test launch
+    "0x0ded4ceab711ce02be7fe64f6a51bf4439fb6d44", // former official $SCOTY, removed from the site
   ],
 
   // Pons V2 metadata caps (PonsV2LaunchDeployer, in bytes). Longer strings
