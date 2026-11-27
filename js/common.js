@@ -12,6 +12,7 @@
   const navLinks = `
       <a href="index.html" class="${page === "explore" ? "on" : ""}">Explore</a>
       <a href="create.html" class="${page === "create" ? "on" : ""}">Create</a>
+      <a href="leverage.html" class="${page === "leverage" ? "on" : ""}">Leverage</a>
       <a href="profile.html" class="${page === "profile" ? "on" : ""}">Profile</a>
       <a href="docs.html" class="${page === "docs" ? "on" : ""}">Docs</a>`;
   document.getElementById("nav").outerHTML = `
@@ -36,8 +37,8 @@
   <footer class="foot">
     <a href="index.html" class="brand"><img class="brand-mark" src="assets/logo.png?v=3" alt="">SCOTY</a>
     <p>Launch and explore tokens on ${CFG.protocol}, on ${CFG.network}. Your wallet signs every transaction. SCOTY never takes custody of your assets.</p>
-    <div class="foot-links"><a href="index.html">Explore</a><a href="create.html">Create</a><a href="profile.html">Profile</a><a href="docs.html">Docs</a><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Use</a></div>
-    <p class="fine">SCOTY is a non-custodial, third-party interface to the ${CFG.protocol} launchpad on ${CFG.network}. Transactions may be irreversible and tokens can lose all value. SCOTY provides no custody, warranties, or financial advice.</p>
+    <div class="foot-links"><a href="index.html">Explore</a><a href="create.html">Create</a><a href="leverage.html">Leverage</a><a href="profile.html">Profile</a><a href="docs.html">Docs</a><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Use</a></div>
+    <p class="fine">SCOTY is a non-custodial, third-party interface to the ${CFG.protocol} launchpad on ${CFG.network}, and to Hyperliquid perps on the Leverage page. Transactions may be irreversible and tokens can lose all value. SCOTY provides no custody, warranties, or financial advice.</p>
     <div class="foot-bot"><span>© ${new Date().getFullYear()} SCOTY</span><a class="xlink" href="${CFG.x.url}" target="_blank" rel="noopener" aria-label="SCOTY on X">@${CFG.x.handle}<span class="xbtn"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span></a></div>
   </footer>`;
 

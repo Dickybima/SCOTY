@@ -486,3 +486,47 @@ a.txrow:hover{background:rgba(31,41,55,.35)}
 }
 .off-cta .btn{white-space:nowrap}
 @media (max-width:820px){.off-cta .btn{padding:11px 12px;font-size:.95rem}}
+
+/* ── Leverage (Hyperliquid perps) ─────────────────────────── */
+.lev .up,.lev-drop .up{color:var(--accent)} .lev .down,.lev-drop .down{color:var(--bad)}
+.lev .muted{color:var(--muted)}
+.lev-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;overflow:visible;position:relative;z-index:5}
+.lev-pick{position:relative}
+.lev-coin{display:flex;align-items:center;gap:12px;background:none;border:0;color:#fff;cursor:pointer;padding:0}
+.lev-sym{font:700 1.6rem Poppins,sans-serif;letter-spacing:-.03em}
+.lev-coin .caret{color:var(--muted);font-size:.9rem}
+.lev-drop{position:absolute;left:0;top:calc(100% + 12px);width:min(420px,86vw);background:#0b0b12;border:1px solid var(--line2);border-radius:16px;padding:12px;box-shadow:var(--shadow);z-index:30}
+.lev-list{max-height:340px;overflow:auto;margin-top:10px;display:grid;gap:2px}
+.lev-list button{display:grid;grid-template-columns:1fr auto 96px 76px;gap:10px;align-items:center;text-align:left;background:none;border:0;color:#fff;padding:9px 10px;border-radius:10px;cursor:pointer;font-size:.9rem}
+.lev-list button:hover{background:rgba(167,139,250,.08)}
+.lev-list .mono{font:500 .82rem var(--mono);text-align:right}
+.lev-quick{margin-top:0}
+.lev-tf{margin-top:0}
+.lev-tf button{padding:4px 12px}
+.chart .ax{font:500 11px var(--mono);fill:var(--soft)}
+.chart .ax.last{fill:#0a0a0a;font-weight:700}
+.lev-row{display:flex;align-items:center;justify-content:space-between;margin:14px 0 6px}
+.lev-row .chips{margin-top:0}
+.lev-x{font:700 1.4rem var(--mono);color:var(--accent)}
+.lev-range{--p:25%;width:100%;appearance:none;-webkit-appearance:none;height:6px;border-radius:999px;margin:12px 0 8px;cursor:pointer;
+  background:linear-gradient(90deg,var(--accent) var(--p),rgba(255,255,255,.1) var(--p))}
+.lev-range::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 5px rgba(167,139,250,.28)}
+.lev-range::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 5px rgba(167,139,250,.28)}
+.lev-ticks{display:flex;justify-content:space-between;gap:6px}
+.lev-ticks button{flex:1;border:1px solid var(--line2);background:rgba(0,0,0,.45);color:var(--muted);border-radius:8px;padding:4px 0;font:500 .75rem var(--mono);cursor:pointer}
+.lev-ticks button.on,.lev-ticks button:hover{color:#fff;border-color:var(--accent)}
+.lev-acct b:first-child{display:block;margin-bottom:8px}
+.lev-acct .kv b{font:600 .85rem var(--mono);color:#fff}
+.lev-acct .ok-t{color:var(--accent);font-weight:600}
+.lev-dep{margin-top:14px;justify-content:center}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;padding:0}
+.pos-row{display:grid;grid-template-columns:1.5fr 1fr 1.1fr 1.1fr .9fr 70px;gap:10px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line);font-size:.86rem}
+.pos-row:last-child{border-bottom:0}
+.pos-row small{display:block;font-size:.74rem}
+.pos-row .mono{font-family:var(--mono)}
+.pos-head{color:var(--soft);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em}
+@media (max-width:760px){
+  .pos-row{grid-template-columns:1.4fr 1fr 1fr 64px}
+  .pos-row > :nth-child(2),.pos-row > :nth-child(5){display:none}
+  .lev-list button{grid-template-columns:1fr auto 80px 64px}
+}

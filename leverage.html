@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leverage — SCOTY</title>
+<meta name="description" content="Go long or short with leverage on HYPE, BTC, ETH, SOL and more, powered by Hyperliquid perps. Non-custodial.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/favicon.png?v=3">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=3">
+<meta name="theme-color" content="#000000">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="@Scotydotfun">
+<meta property="og:image" content="https://scoty.fun/assets/logo.png?v=3">
+<meta name="twitter:image" content="https://scoty.fun/assets/logo.png?v=3">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="leverage">
+<script src="js/preloader.js"></script>
+<div id="nav"></div>
+
+<main>
+  <div class="wrap">
+    <header class="lev-top">
+      <div>
+        <p class="eyebrow">Leverage</p>
+        <h1 class="title">Go <em>long</em> or <em>short</em>.</h1>
+        <p class="sub">Trade perps with leverage on HYPE, BTC, ETH, SOL and 100+ markets, powered by <a class="link" href="https://hyperliquid.xyz" target="_blank" rel="noopener">Hyperliquid</a>. Your wallet stays in control.</p>
+      </div>
+    </header>
+
+    <div class="tk lev">
+      <div class="tk-main">
+        <!-- market header -->
+        <section class="panel lev-head">
+          <div class="lev-pick">
+            <button class="lev-coin" id="coinBtn" type="button"><span class="lev-sym" id="coinSym">—</span><span class="pill-s" id="coinMax">—</span><span class="caret">▾</span></button>
+            <div class="lev-drop" id="coinDrop" hidden>
+              <input class="input" id="coinSearch" placeholder="Search market…" autocomplete="off">
+              <div class="lev-list" id="coinList"></div>
+            </div>
+          </div>
+          <div class="chips lev-quick" id="quick"></div>
+        </section>
+
+        <section class="tk-stats">
+          <div class="stat"><small>Mark price</small><b id="stMark">—</b><span id="stChg"></span></div>
+          <div class="stat"><small>Funding / 1h</small><b id="stFund">—</b><span id="stFundY"></span></div>
+          <div class="stat"><small>Open interest</small><b id="stOi">—</b><span>&nbsp;</span></div>
+          <div class="stat"><small>24h volume</small><b id="stVol">—</b><span>&nbsp;</span></div>
+        </section>
+
+        <section class="panel tk-chart">
+          <div class="tk-chart-h">
+            <div><small id="chLbl">Price</small><b id="chVal">—</b><span id="chDelta" class="delta"></span></div>
+            <div class="chips lev-tf" id="tf">
+              <button type="button" data-v="15m">15m</button><button type="button" data-v="1h" class="on">1h</button><button type="button" data-v="4h">4h</button><button type="button" data-v="1d">1D</button>
+            </div>
+          </div>
+          <div class="chart" id="chart"><div class="chart-empty">Loading chart…</div></div>
+        </section>
+
+        <section class="panel flush">
+          <div class="ptabs"><button class="on" type="button">Positions <span id="posCount"></span></button></div>
+          <div class="pbody"><div id="positions"><div class="empty">Connect your wallet to see your positions.</div></div></div>
+        </section>
+      </div>
+
+      <aside class="tk-side">
+        <section class="panel trade-box lev-box">
+          <div class="seg" id="side">
+            <button type="button" data-s="long" class="on buy">Long</button>
+            <button type="button" data-s="short" class="sell">Short</button>
+          </div>
+
+          <div class="lev-row">
+            <div class="chips" id="mode"><button type="button" data-v="cross" class="on">Cross</button><button type="button" data-v="isolated">Isolated</button></div>
+            <span class="lev-x" id="levVal">10x</span>
+          </div>
+          <input type="range" class="lev-range" id="lev" min="1" max="40" step="1" value="10">
+          <div class="lev-ticks" id="levTicks"></div>
+
+          <label class="lbl" for="amt"><span>Margin</span><span class="bal" id="availLbl"></span></label>
+          <div class="amount">
+            <input class="input" id="amt" type="number" min="0" step="any" inputmode="decimal" placeholder="0.00">
+            <span class="unit">USDC</span>
+          </div>
+          <div class="chips" id="pct"><button type="button" data-v="25">25%</button><button type="button" data-v="50">50%</button><button type="button" data-v="75">75%</button><button type="button" data-v="100">Max</button></div>
+
+          <div class="quote">
+            <div><span>Position size</span><b id="qSize">—</b></div>
+            <div><span>Entry ≈</span><b id="qEntry">—</b></div>
+            <div><span>Est. liquidation</span><b id="qLiq">—</b></div>
+            <div><span>Fee (taker)</span><b id="qFee">—</b></div>
+            <div><span>Max slippage</span><b><select id="slip"><option value="0.01">1%</option><option value="0.03">3%</option><option value="0.05" selected>5%</option><option value="0.08">8%</option></select></b></div>
+          </div>
+          <button class="btn btn-main wide" id="goBtn" type="button">Connect wallet</button>
+          <p class="status" id="status"></p>
+        </section>
+
+        <section class="panel lev-acct">
+          <b>Hyperliquid account</b>
+          <div class="kv"><span>Account value</span><b class="mono" id="acVal">—</b></div>
+          <div class="kv"><span>Available margin</span><b class="mono" id="acFree">—</b></div>
+          <div class="kv"><span>Spot USDC</span><b class="mono" id="acSpot">—</b></div>
+          <div class="kv"><span>Trading key</span><span id="acAgent">—</span></div>
+          <a class="btn wide lev-dep" href="https://app.hyperliquid.xyz/portfolio" target="_blank" rel="noopener">Deposit USDC on Hyperliquid ↗</a>
+          <p class="note">Leverage trades run on Hyperliquid, not on Elysium. Fund your Hyperliquid account with USDC first. Leverage can wipe out your margin fast, so trade only what you can lose.</p>
+        </section>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<div id="footer"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/hl.js"></script>
+<script src="js/leverage.js"></script>
+</body>
+</html>
