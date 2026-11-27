@@ -91,7 +91,7 @@
     const href = tokenUrl(addr);
     const paint = (d) => {
       el.innerHTML = `
-        <a class="off-logo" href="${href}"><img src="assets/logo.png?v=2" alt=""></a>
+        <a class="off-logo" href="${href}"><img src="assets/logo.png?v=3" alt=""></a>
         <div class="off-main">
           <span class="off-badge">⚓ Official token</span>
           <a class="off-name" href="${href}">${esc(d.name || "SCOTY")} <span>$${esc(d.symbol || "SCOTY")}</span></a>

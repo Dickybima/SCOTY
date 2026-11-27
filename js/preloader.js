@@ -28,12 +28,12 @@
     fontHref: "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500&display=swap",
     font: '"Pixelify Sans", "Silkscreen", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace',
   };
-  // SCOTY colours: black void, lavender venom (Elysium); the logo keeps its lime
+  // SCOTY colours: black void, lavender venom (Elysium); matching the logo
   var colors = {
     void: "#000000",
     glass: "#a6acb7",
     venom: "#a78bfa",
-    slime: "#befd08",
+    slime: "#c4b5fd",
     gem: "#8b5cf6",
     brass: "#e39a2d",
     spider: "#14141c",
@@ -41,7 +41,7 @@
     silk: "#eef7ef",
   };
 
-  // The SCOTY anchor drawn on the widow's back: # silver, + lime slime.
+  // The SCOTY anchor drawn on the widow's back: # silver, + lavender slime.
   var LOGO = [
     "....#....",
     "...###...",
