@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SCOTY — burn tracker card</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* 1200×675 (X image). Render: node branding/tweets/render-update.cjs burn */
+  :root{--acc:#a78bfa;--acc2:#c4b5fd;--fire:#ff7a45;--fire2:#ffb36b;--muted:#9ca3af;--line:#2e2e3d}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1200px;height:675px;background:#000;overflow:hidden}
+  .card{position:relative;width:1200px;height:675px;overflow:hidden;font-family:Poppins,sans-serif;color:#fff;
+    background:radial-gradient(700px 420px at 22% 60%,rgba(255,110,50,.18),transparent 70%),radial-gradient(800px 420px at 90% -10%,rgba(167,139,250,.22),transparent 70%),#000}
+  .grid{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.2px);background-size:24px 24px;-webkit-mask-image:radial-gradient(70% 80% at 60% 45%,#000 30%,transparent 85%)}
+  .art{position:absolute;left:-40px;top:40px;width:620px;height:620px;-webkit-mask-image:radial-gradient(closest-side,#000 70%,transparent 100%)}
+  .art img{width:100%;height:100%;display:block}
+  .right{position:absolute;left:560px;right:56px;top:48px;bottom:40px;display:flex;flex-direction:column}
+  .top{display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:24px}
+  .brand img{width:46px;height:46px;border-radius:13px;border:1px solid rgba(255,255,255,.14)}
+  .badge{font:700 13px Poppins;letter-spacing:.1em;text-transform:uppercase;color:#1a0a00;background:linear-gradient(90deg,var(--fire2),var(--fire));border-radius:999px;padding:6px 14px;box-shadow:0 0 24px rgba(255,122,69,.45)}
+  h1{margin:34px 0 10px;font-size:50px;font-weight:600;letter-spacing:-.04em;line-height:1.04}
+  h1 em{font-style:normal;background:linear-gradient(to bottom,#fff2e6,var(--fire2) 50%,var(--fire));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{font-size:18px;color:#c3c3d0;line-height:1.45;margin-bottom:24px}
+  .panel{border-radius:18px;padding:18px 20px;background:rgba(17,12,16,.78);border:1px solid rgba(255,140,90,.35);box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 40px rgba(255,122,69,.1)}
+  .row{display:flex;gap:14px}
+  .k{flex:1;padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.4);border:1px solid var(--line)}
+  .k small{display:block;font-size:12px;color:var(--muted);margin-bottom:2px}
+  .k b{font:700 17px "JetBrains Mono",monospace;color:#fff}
+  .bar{height:8px;border-radius:999px;background:#1f1f2a;margin:16px 0 14px;overflow:hidden}
+  .bar i{display:block;height:100%;width:38%;background:linear-gradient(90deg,var(--fire),var(--fire2),var(--acc));box-shadow:0 0 14px rgba(255,122,69,.6)}
+  .list{display:grid;gap:6px}
+  .li{display:flex;justify-content:space-between;padding:8px 12px;border-radius:10px;background:rgba(0,0,0,.4);border:1px solid var(--line);font:500 14px "JetBrains Mono",monospace;color:#e5e7eb}
+  .li span:last-child{color:var(--muted)}
+  .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:16px}
+  .foot .url{font:700 22px "JetBrains Mono",monospace;color:#fff}
+  .foot .url span{color:var(--acc2)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid"></div>
+  <div class="art"><img src="burn-frame.png" alt=""></div>
+  <div class="right">
+    <div class="top">
+      <div class="brand"><img src="../logo/scoty-logo-elysium-960.png" alt="">SCOTY</div>
+      <span class="badge">🔥 New · Burn tracker</span>
+    </div>
+    <h1>Every <em>$SCOTY burn</em>,<br>live on scoty.fun.</h1>
+    <div class="sub">Straight from the chain, right on the homepage. No screenshots, no trust me bro.</div>
+    <div class="panel">
+      <div class="row">
+        <div class="k"><small>Total burned</small><b>🔥 $SCOTY</b></div>
+        <div class="k"><small>Supply gone</small><b>% forever</b></div>
+        <div class="k"><small>Value burned</small><b>$ USD</b></div>
+      </div>
+      <div class="bar"><i></i></div>
+      <div class="list">
+        <div class="li"><span>🔥 Recent burns</span><span>tx ↗</span></div>
+        <div class="li"><span>🔒 Burn address 0x…dEaD</span><span>explorer ↗</span></div>
+      </div>
+    </div>
+    <div class="foot">
+      <div class="url">scoty<span>.fun</span></div>
+      <div>Live on Elysium · @Scotydotfun</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
