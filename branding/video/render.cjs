@@ -15,7 +15,7 @@ const [html = "meet-scoty.html", outName = "meet-scoty.mp4", w = "1920", h = "10
 const W = +w, H = +h;
 const FPS = 30;
 // meet-scoty.html is laid out at 1280×720 and scaled 1.5×; canvas pages render at full size.
-const S = scale ? +scale : (html === "meet-scoty.html" || html === "introducing-elysium.html" || html === "how-to-launch.html") ? 1.5 : 1;
+const S = scale ? +scale : (html === "meet-scoty.html" || html === "introducing-elysium.html" || html === "how-to-launch.html" || html === "leverage-promo.html") ? 1.5 : 1;
 
 (async () => {
   const browser = await chromium.launch({ args: ["--allow-file-access-from-files"] });

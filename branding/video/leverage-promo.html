@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Leverage on SCOTY — promo video</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* 1280×720 stage, rendered at 1.5× → 1920×1080 by render.cjs. Time-driven: window.render(seconds).
+     Screens in tutorial-lev/ are captures of scoty.fun (1280×720 @1.5×). */
+  :root{--acc:#a78bfa;--acc2:#c4b5fd;--muted:#9ca3af;--line:#374151}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1280px;height:720px;background:#000;overflow:hidden}
+  #stage{position:relative;width:1280px;height:720px;overflow:hidden;font-family:Poppins,sans-serif;color:#fff;background:#000}
+  .shot{position:absolute;inset:0;opacity:0;will-change:transform,opacity}
+  .shot img{position:absolute;left:0;top:0;width:1280px;height:720px;display:block}
+  .shot .b{opacity:0}
+  .dim{position:absolute;inset:0;background:rgba(0,0,0,.55);opacity:0}
+  .hl{position:absolute;border:2px solid var(--acc);border-radius:12px;box-shadow:0 0 0 4px rgba(167,139,250,.18),0 0 30px rgba(167,139,250,.45);opacity:0;pointer-events:none}
+  .ripple{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:2px solid var(--acc2);opacity:0}
+  #typed{position:absolute;font:400 15px Poppins,sans-serif;color:#fff;white-space:nowrap;display:flex;align-items:center;padding-left:16px;background:#030407}
+  #typed .c{display:inline-block;width:2px;height:18px;background:#fff;margin-left:2px}
+  #cursor{position:absolute;left:0;top:0;width:26px;height:26px;z-index:30;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6));opacity:0}
+  /* caption */
+  #cap{position:absolute;left:50%;bottom:28px;z-index:40;display:flex;align-items:center;gap:14px;padding:12px 22px 12px 12px;border-radius:999px;
+    background:rgba(10,10,16,.88);border:1px solid rgba(167,139,250,.35);box-shadow:0 18px 50px rgba(0,0,0,.6),0 0 40px rgba(167,139,250,.12);backdrop-filter:blur(8px);opacity:0;white-space:nowrap}
+  #cap .n{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font:700 16px "JetBrains Mono",monospace;color:#0a0a0a;background:linear-gradient(to bottom,var(--acc2),var(--acc))}
+  #cap .t{font-size:21px;font-weight:600;letter-spacing:-.01em}
+  #cap .t em{font-style:normal;color:var(--acc2)}
+  #cap .s{font-size:14px;color:var(--muted);margin-top:1px}
+  /* wallet popup */
+  #wallet{position:absolute;right:40px;top:76px;width:340px;padding:20px;border-radius:18px;background:#111118;border:1px solid #2d2d3a;box-shadow:0 30px 80px rgba(0,0,0,.7);opacity:0;z-index:20}
+  #wallet .hd{display:flex;align-items:center;justify-content:space-between;font-size:14px;color:var(--muted)}
+  #wallet .net{display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:999px;border:1px solid #2d2d3a;font:500 12px "JetBrains Mono",monospace;color:#e5e7eb}
+  #wallet .net i{width:7px;height:7px;border-radius:50%;background:var(--acc)}
+  #wallet h3{font-size:22px;margin:16px 0 4px}
+  #wallet .site{font:500 13px "JetBrains Mono",monospace;color:var(--muted)}
+  #wallet .rows{margin:18px 0;border:1px solid #2d2d3a;border-radius:12px;overflow:hidden}
+  #wallet .r{display:flex;justify-content:space-between;padding:11px 14px;font-size:14px;border-top:1px solid #23232e}
+  #wallet .r:first-child{border-top:0}
+  #wallet .r span{color:var(--muted)} #wallet .r b{font:600 14px "JetBrains Mono",monospace}
+  #wallet .btns{display:flex;gap:10px}
+  #wallet .btns div{flex:1;text-align:center;padding:12px;border-radius:12px;font-weight:600;font-size:15px}
+  #wallet .rej{border:1px solid #2d2d3a;color:#d1d5db}
+  #wallet .ok{background:linear-gradient(to bottom,var(--acc2),var(--acc));color:#0a0a0a}
+  /* title / outro cards */
+  .card{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;
+    background:radial-gradient(640px 340px at 50% -10%,rgba(167,139,250,.2),transparent 70%),radial-gradient(900px 400px at 50% 115%,rgba(70,60,120,.35),transparent 70%),#000}
+  .card .grid{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.08) 1px,transparent 1.2px);background-size:24px 24px;-webkit-mask-image:radial-gradient(60% 70% at 50% 50%,#000 30%,transparent 80%)}
+  .logo{width:120px;height:120px;border-radius:28%;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 0 0 6px rgba(167,139,250,.06),0 20px 70px rgba(167,139,250,.3);position:relative}
+  .logo img{width:100%;height:100%;display:block}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;padding:7px 16px;border-radius:999px;border:1px solid var(--line);background:rgba(31,41,55,.55);
+    font:500 13px "JetBrains Mono",monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);position:relative}
+  .eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc)}
+  .h{font-weight:600;letter-spacing:-.04em;line-height:1.05;text-align:center;position:relative;
+    background:linear-gradient(to bottom,#fff,#fff 45%,rgba(255,255,255,.6));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .h em{font-style:normal;background:linear-gradient(to bottom,var(--acc2),var(--acc));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  #intro .h{font-size:74px;margin:26px 0 22px}
+  #outro .h{font-size:68px;margin:24px 0 14px}
+  #outro .url{font:700 34px "JetBrains Mono",monospace;color:var(--acc2);margin-bottom:22px;position:relative;text-shadow:0 0 24px rgba(167,139,250,.5)}
+  .steps{display:flex;gap:12px;margin-top:6px;position:relative}
+  .steps span{padding:8px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(17,24,39,.6);font-size:15px;color:#d1d5db}
+  .steps b{color:var(--acc2);font-family:"JetBrains Mono",monospace;margin-right:6px}
+  #progress{position:absolute;left:0;top:0;height:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));z-index:60;box-shadow:0 0 10px var(--acc)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="shots"></div>
+  <div class="dim" id="dim"></div>
+  <div id="wallet">
+    <div class="hd"><span>Your wallet</span><span class="net"><i></i>Signature</span></div>
+    <h3>Enable trading</h3>
+    <div class="site">scoty.fun · Hyperliquid</div>
+    <div class="rows">
+      <div class="r"><span>Action</span><b>Approve trading key</b></div>
+      <div class="r"><span>Key name</span><b>SCOTY</b></div>
+      <div class="r"><span>Can withdraw</span><b>No</b></div>
+      <div class="r"><span>Gas</span><b>Free</b></div>
+    </div>
+    <div class="btns"><div class="rej">Reject</div><div class="ok" id="okBtn">Sign</div></div>
+  </div>
+  <div id="hls"></div>
+  <div class="ripple" id="ripple"></div>
+  <svg id="cursor" viewBox="0 0 24 24"><path d="M4 2l16 9.5-7 1.6 4.3 7.4-3 1.7-4.3-7.4L4 19z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  <div id="cap"><div class="n" id="capN">1</div><div><div class="t" id="capT"></div><div class="s" id="capS"></div></div></div>
+
+  <section class="card" id="intro">
+    <div class="grid"></div>
+    <div class="logo" id="inLogo"><img src="../logo/scoty-logo-elysium-960.png" alt=""></div>
+    <div class="h" id="inH">Introducing<br><em>Leverage</em> on SCOTY</div>
+    <div class="eyebrow" id="inPill"><i></i>Long · Short · up to 40x · Hyperliquid</div>
+  </section>
+  <section class="card" id="outro">
+    <div class="grid"></div>
+    <div class="logo" id="outLogo"><img src="../logo/scoty-logo-elysium-960.png" alt=""></div>
+    <div class="h" id="outH">Go <em>long.</em> Go <em>short.</em></div>
+    <div class="url" id="outUrl">scoty.fun/leverage</div>
+    <div class="steps" id="outSteps"><span><b>01</b>Fund USDC</span><span><b>02</b>Enable</span><span><b>03</b>Pick a side</span><span><b>04</b>Trade</span></div>
+  </section>
+  <div id="progress"></div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v) => Math.max(0, Math.min(1, v));
+  const prog = (t, a, b) => clamp((t - a) / (b - a));
+  const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+  const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+  const back = (x) => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2);
+  const mid = (b) => [b[0] + b[2] / 2, b[1] + b[3] / 2];
+
+  // target boxes from the capture (CSS px of a 1280×720 viewport)
+  const B = {"01-top":{"nav":[618,25,61,22],"title":[80,175,1120,71]},"02-market":{"quick":[545,60,250,32],"coin":[105,62,216,29],"chart":[105,342,690,260],"stats":[80,133,740,107]},"03-drop":{"list":[118,181,394,173],"first":[118,181,394,42]},"04-enable":{"go":[865,555,310,47],"acct":[840,675,360,377]},"05-enabled":{"go":[865,555,310,47],"status":[865,613,310,45],"side":[865,60,310,49]},"06-lev0":{"long":[865,60,155,49],"lev":[865,173,310,6],"tick10":[1118,187,57,26],"mode":[865,123,174,32]},"07-ready":{"pct":[927,320,54,32],"quote":[865,368,310,171],"go":[865,555,310,47]},"08-long":{"status":[865,613,310,45]},"09-short":{"side":[1023,66,146,37],"mode":[865,123,174,32],"go":[865,555,310,47],"quote":[865,368,310,171]},"10-positions":{"table":[105,426,690,174],"close":[721,484,63,37]}};
+
+  // Scenes: a = start, d = duration. hl: highlights [box, from, to]. path: cursor stops [t, box, click?]. zoom: [box, amount]
+  const S = [];
+  let T = 3.2;
+  function add(o) { o.a = T; T += o.d; S.push(o); return o; }
+  add({ img: "01-top", d: 3.2, n: 1, cap: "New on SCOTY: <em>Leverage</em>", sub: "Go long or short on perps, powered by Hyperliquid",
+    path: [[0.3, [640, 420, 0, 0]], [1.5, B["01-top"].nav, 1]], hl: [[B["01-top"].nav, 1.5, 3.2]], zoom: [B["01-top"].nav, 0.06] });
+  add({ img: "02-market", d: 3.8, n: 2, cap: "Pick a market", sub: "HYPE, BTC, ETH, SOL and 100+ more, with a live chart",
+    path: [[0, B["01-top"].nav], [1.0, B["02-market"].quick], [2.4, B["02-market"].coin, 1]], hl: [[B["02-market"].quick, 0.6, 2.2], [B["02-market"].stats, 2.2, 3.8]], zoom: [[80, 60, 740, 540], 0.05] });
+  add({ img: "03-drop", d: 3.0, n: 2, cap: "Search any market", sub: "Max leverage, price and 24h change at a glance",
+    path: [[0, B["02-market"].coin], [1.2, B["03-drop"].first]], hl: [[B["03-drop"].list, 0.4, 3.0]], zoom: [B["03-drop"].list, 0.08] });
+  add({ img: "04-enable", d: 3.4, n: 3, cap: "Fund Hyperliquid, then <em>Enable trading</em>", sub: "Deposit USDC to Hyperliquid with the same wallet",
+    path: [[0, B["03-drop"].first], [1.0, B["04-enable"].acct], [2.4, B["04-enable"].go, 1]], hl: [[B["04-enable"].acct, 0.6, 2.2], [B["04-enable"].go, 2.2, 3.4]], zoom: [[840, 300, 360, 600], 0.05] });
+  add({ img: "04-enable", d: 3.4, n: 3, cap: "Sign <em>once</em>", sub: "Creates a SCOTY trading key: it can trade, never withdraw",
+    wallet: true, path: [[0, B["04-enable"].go], [1.5, "ok", 1]] });
+  add({ img: "05-enabled", d: 2.6, n: 3, cap: "Trading enabled ✅", sub: "No wallet pop-up for every trade after this",
+    path: [[0, "ok"]], hideCursor: 0.2, hl: [[B["05-enabled"].status, 0.3, 2.6]], zoom: [B["05-enabled"].status, 0.08] });
+  add({ img: "06-lev0", img2: "07-ready", swaps: [2.9], d: 5.0, n: 4, cap: "Choose <em>Long</em>, set leverage &amp; margin", sub: "Cross or Isolated · up to 40x on BTC",
+    path: [[0.4, B["05-enabled"].go], [1.1, B["06-lev0"].long, 1], [2.0, B["06-lev0"].tick10, 1], [2.9, B["07-ready"].pct, 1]],
+    hl: [[B["06-lev0"].long, 1.1, 2.0], [B["06-lev0"].tick10, 2.0, 2.9], [B["07-ready"].quote, 3.0, 5.0]], zoom: [[865, 60, 310, 480], 0.06] });
+  add({ img: "07-ready", d: 2.8, n: 5, cap: "Hit <em>Long HYPE 10x</em>", sub: "Fills at market, guarded by your max slippage",
+    path: [[0, B["07-ready"].pct], [1.2, B["07-ready"].go, 1]], hl: [[B["07-ready"].go, 1.0, 2.8]], zoom: [B["07-ready"].go, 0.06] });
+  add({ img: "08-long", d: 2.6, n: 5, cap: "Position open ✅", sub: "58.2 HYPE long at 10x",
+    path: [[0, B["07-ready"].go]], hideCursor: 0.2, hl: [[B["08-long"].status, 0.3, 2.6]], zoom: [B["08-long"].status, 0.08] });
+  add({ img: "09-short", d: 3.6, n: 6, cap: "Or go <em>Short</em>", sub: "Bet on the drop: ETH 20x, isolated margin",
+    path: [[0.3, [700, 400, 0, 0]], [1.1, B["09-short"].side, 1], [2.4, B["09-short"].go, 1]], hl: [[B["09-short"].side, 1.1, 2.3], [B["09-short"].go, 2.3, 3.6]], zoom: [[865, 60, 310, 560], 0.05] });
+  add({ img: "10-positions", d: 4.0, n: 7, cap: "Track &amp; <em>close</em> in one click", sub: "Live PnL, ROE and liquidation price",
+    path: [[0.3, [640, 300, 0, 0]], [2.4, B["10-positions"].close, 1]], hl: [[B["10-positions"].table, 0.3, 2.3], [B["10-positions"].close, 2.3, 4.0]], zoom: [B["10-positions"].table, 0.06] });
+  const OUTRO = T;
+  const DURATION = OUTRO + 4.2;
+
+  // build DOM
+  for (const s of S) {
+    const el = document.createElement("div"); el.className = "shot";
+    el.innerHTML = `<img src="tutorial-lev/${s.img}.png">` + (s.img2 ? `<img class="b" src="tutorial-lev/${s.img2}.png">` : "") +
+      (s.type ? `<div id="typed" style="left:${B[s.img].idea[0] + 2}px;top:${B[s.img].idea[1] + 2}px;width:${B[s.img].idea[2] - 4}px;height:${B[s.img].idea[3] - 4}px;border-radius:12px"><span id="tt"></span><span class="c" id="tc"></span></div>` : "");
+    $("shots").appendChild(el); s.el = el;
+    s.hlEls = (s.hl || []).map((h) => { const d = document.createElement("div"); d.className = "hl"; el.appendChild(d);
+      const p = 6; Object.assign(d.style, { left: h[0][0] - p + "px", top: h[0][1] - p + "px", width: h[0][2] + 2 * p + "px", height: h[0][3] + 2 * p + "px" }); return d; });
+  }
+  const okBox = () => { const r = $("okBtn").getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; };
+  const resolve = (b) => (b === "ok" ? okBox() : b);
+
+  function cursorAt(s, lt) {
+    const P = s.path || [];
+    let pos = mid(resolve(P[0][1])), click = null;
+    for (let i = 1; i < P.length; i++) {
+      const [t0, b0] = P[i - 1], [t1, b1, c] = P[i];
+      const start = Math.max(t0, t1 - 0.9);
+      if (lt >= start) pos = (() => { const k = ease(prog(lt, start, t1)); const A = mid(resolve(b0)), Z = mid(resolve(b1)); return [A[0] + (Z[0] - A[0]) * k, A[1] + (Z[1] - A[1]) * k]; })();
+      if (c && lt >= t1 && lt < t1 + 0.6) click = [mid(resolve(b1)), (lt - t1) / 0.6];
+    }
+    return { pos, click };
+  }
+
+  window.render = function (t) {
+    $("progress").style.width = (t / DURATION) * 100 + "%";
+    // intro
+    const iv = 1 - ease(prog(t, 2.7, 3.3));
+    $("intro").style.opacity = iv;
+    const lk = prog(t, 0.15, 0.9);
+    $("inLogo").style.transform = `scale(${0.5 + 0.5 * back(lk)}) rotate(${(1 - easeOut(lk)) * -14}deg)`; $("inLogo").style.opacity = easeOut(lk);
+    for (const [id, a] of [["inH", 0.6], ["inPill", 1.1]]) { const k = prog(t, a, a + 0.5); $(id).style.opacity = easeOut(k); $(id).style.transform = `translateY(${(1 - easeOut(k)) * 18}px)`; }
+
+    let cur = null;
+    for (const s of S) {
+      const lt = t - s.a, on = lt >= -0.2 && lt < s.d + 0.2;
+      const v = Math.min(ease(prog(lt, -0.2, 0.05)), 1 - ease(prog(lt, s.d - 0.05, s.d + 0.2)));
+      s.el.style.opacity = on ? v : 0;
+      if (s.zoom) {
+        const [bx, z] = s.zoom, c = mid(bx), k = ease(prog(lt, 0, s.d));
+        s.el.style.transformOrigin = `${c[0]}px ${c[1]}px`; s.el.style.transform = `scale(${1 + z * k})`;
+        s._z = { c, s: 1 + z * k };
+      } else s._z = { c: [0, 0], s: 1 };
+      (s.hl || []).forEach((h, i) => { const hv = Math.min(easeOut(prog(lt, h[1], h[1] + 0.3)), 1 - easeOut(prog(lt, h[2] - 0.25, h[2]))); s.hlEls[i].style.opacity = hv; });
+      if (s.img2) { let n = 0; for (const w of s.swaps) if (lt >= w) n++; s.el.querySelector(".b").style.opacity = n >= s.swaps.length ? 1 : 0;
+        // simple: show settled settings after the last click
+      }
+      if (s.type) { const [a, b, txt] = s.type; $("tt").textContent = txt.slice(0, Math.floor(txt.length * prog(lt, a, b))); $("tc").style.opacity = lt < b || Math.floor(t * 2.5) % 2 ? 1 : 0; }
+      if (lt >= 0 && lt < s.d) cur = { s, lt, v };
+    }
+    // wallet popup
+    const ws = S.find((s) => s.wallet);
+    const wl = t - ws.a, wv = Math.min(easeOut(prog(wl, 0.1, 0.5)), 1 - ease(prog(wl, ws.d - 0.3, ws.d + 0.2)));
+    $("wallet").style.opacity = wv; $("wallet").style.transform = `translateY(${(1 - easeOut(prog(wl, 0.1, 0.5))) * -16}px) scale(${0.97 + 0.03 * easeOut(prog(wl, 0.1, 0.5))})`;
+    $("dim").style.opacity = wv;
+    const press = prog(wl, 1.5, 1.62) - prog(wl, 1.62, 1.78);
+    $("okBtn").style.transform = `scale(${1 - press * 0.06})`;
+
+    // caption
+    const cap = $("cap");
+    if (cur) {
+      const s = cur.s;
+      if (cap.dataset.i !== String(S.indexOf(s))) {
+        cap.dataset.i = S.indexOf(s); $("capN").textContent = s.n; $("capT").innerHTML = s.cap; $("capS").innerHTML = s.sub || "";
+      }
+      const prevSame = S.indexOf(s) > 0 && S[S.indexOf(s) - 1].n === s.n;
+      const ci = prevSame ? 1 : easeOut(prog(cur.lt, 0.15, 0.55));
+      const next = S[S.indexOf(s) + 1], nextSame = next && next.n === s.n;
+      const co = nextSame ? 1 : 1 - ease(prog(cur.lt, s.d - 0.3, s.d));
+      cap.style.opacity = Math.min(ci, co);
+      cap.style.transform = `translateX(-50%) translateY(${(1 - ci) * 18}px)`;
+    } else cap.style.opacity = 0;
+
+    // cursor
+    const c = $("cursor"), rp = $("ripple");
+    if (cur && cur.s.path && !(cur.s.hideCursor !== undefined && cur.lt > cur.s.hideCursor)) {
+      const { pos, click } = cursorAt(cur.s, cur.lt);
+      const z = cur.s._z; const px = z.c[0] + (pos[0] - z.c[0]) * z.s, py = z.c[1] + (pos[1] - z.c[1]) * z.s;
+      const pr = click && click[1] < 0.35 ? 0.85 : 1;
+      c.style.opacity = Math.min(1, cur.v * 1.5) * (cur.s.hideCursor !== undefined ? 1 - prog(cur.lt, 0, cur.s.hideCursor) : 1);
+      c.style.transform = `translate(${px - 4}px, ${py - 2}px) scale(${pr})`;
+      if (click) { const k = click[1]; const q = [z.c[0] + (click[0][0] - z.c[0]) * z.s, z.c[1] + (click[0][1] - z.c[1]) * z.s];
+        rp.style.left = q[0] + "px"; rp.style.top = q[1] + "px"; rp.style.opacity = 1 - k; rp.style.transform = `scale(${0.4 + 1.4 * easeOut(k)})`; }
+      else rp.style.opacity = 0;
+    } else { c.style.opacity = 0; rp.style.opacity = 0; }
+
+    // outro
+    const ov = ease(prog(t, OUTRO - 0.3, OUTRO + 0.3));
+    $("outro").style.opacity = ov;
+    const ok = prog(t, OUTRO + 0.1, OUTRO + 0.8);
+    $("outLogo").style.transform = `scale(${0.6 + 0.4 * back(ok)})`; $("outLogo").style.opacity = easeOut(ok);
+    for (const [id, a] of [["outH", 0.4], ["outUrl", 0.8], ["outSteps", 1.2]]) { const k = prog(t, OUTRO + a, OUTRO + a + 0.5); $(id).style.opacity = easeOut(k); $(id).style.transform = `translateY(${(1 - easeOut(k)) * 18}px)`; }
+  };
+  window.DURATION = DURATION;
+  window.ready = Promise.all([...document.images].map((i) => i.complete ? 0 : new Promise((r) => (i.onload = i.onerror = r))));
+  window.render(0);
+</script>
+</body>
+</html>
