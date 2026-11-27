@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SCOTY — website update card</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* 1200×675 (X image). Render: node branding/tweets/render-update.cjs */
+  :root{--acc:#a78bfa;--acc2:#c4b5fd;--muted:#9ca3af;--line:#2e2e3d}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1200px;height:675px;background:#000;overflow:hidden}
+  .card{position:relative;width:1200px;height:675px;overflow:hidden;font-family:Poppins,sans-serif;color:#fff;padding:44px 56px;
+    background:radial-gradient(760px 380px at 50% -18%,rgba(167,139,250,.24),transparent 70%),radial-gradient(900px 420px at 50% 125%,rgba(70,60,120,.35),transparent 70%),#000}
+  .grid{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.08) 1px,transparent 1.2px);background-size:24px 24px;
+    -webkit-mask-image:radial-gradient(65% 75% at 50% 45%,#000 30%,transparent 85%)}
+  .drips{position:absolute;top:0;left:640px;width:240px;height:90px;opacity:.9}
+  .top{position:relative;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:14px;font-weight:700;font-size:28px;letter-spacing:.01em}
+  .brand img{width:54px;height:54px;border-radius:15px;border:1px solid rgba(255,255,255,.14);box-shadow:0 0 0 5px rgba(167,139,250,.06),0 10px 34px rgba(167,139,250,.3)}
+  .pill{display:inline-flex;align-items:center;gap:10px;padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:rgba(31,31,46,.6);
+    font:500 13px "JetBrains Mono",monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .pill i{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc)}
+  h1{position:relative;margin:34px 0 8px;font-size:50px;white-space:nowrap;font-weight:600;letter-spacing:-.04em;line-height:1.05;
+    background:linear-gradient(to bottom,#fff,#fff 45%,rgba(255,255,255,.62));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  h1 em{font-style:normal;background:linear-gradient(to bottom,var(--acc2),var(--acc));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{position:relative;font-size:18px;color:var(--muted);margin-bottom:26px}
+  .tiles{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .tile{padding:18px 18px 16px;border-radius:16px;background:rgba(17,17,28,.72);border:1px solid rgba(60,56,86,.75);min-height:128px}
+  .tile.hot{border-color:rgba(167,139,250,.6);box-shadow:0 0 0 1px rgba(167,139,250,.15),0 12px 40px rgba(167,139,250,.14)}
+  .tile .h{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600;margin-bottom:8px}
+  .tile .ico{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:16px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35)}
+  .tile p{font-size:15px;line-height:1.45;color:#c3c3d0}
+  .tile p b{color:var(--acc2);font-weight:600}
+  .tile .mono{font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--acc2)}
+  .foot{position:absolute;left:56px;right:56px;bottom:30px;display:flex;align-items:center;justify-content:space-between;font-size:16px;color:var(--muted)}
+  .foot .url{font:700 22px "JetBrains Mono",monospace;color:#fff}
+  .foot .url span{color:var(--acc2)}
+  .foot .tag em{font-style:normal;color:var(--acc2)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid"></div>
+  <svg class="drips" viewBox="1100 0 400 150" preserveAspectRatio="none" aria-hidden="true">
+    <defs><linearGradient id="sl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c4b5fd"/><stop offset=".55" stop-color="#a78bfa"/><stop offset="1" stop-color="#7c5cdb"/></linearGradient>
+    <filter id="gl" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <g fill="url(#sl)" filter="url(#gl)" opacity=".85">
+      <path d="M1500 0H1150C1156 8 1166 14 1178 14C1190 14 1196 22 1196 36V74C1196 86 1208 90 1214 80C1218 72 1216 56 1216 42C1216 30 1222 24 1232 24C1244 24 1250 32 1250 46V118C1250 134 1264 138 1270 126C1274 116 1272 90 1272 62C1272 40 1280 30 1298 30H1330C1342 30 1346 38 1346 50V60C1346 70 1356 72 1360 64C1364 54 1362 36 1374 28C1388 20 1420 22 1450 20C1474 18 1492 14 1500 10Z"/>
+      <circle cx="1260" cy="144" r="8"/>
+    </g>
+  </svg>
+
+  <div class="top">
+    <div class="brand"><img src="../logo/scoty-logo-elysium-960.png" alt="">SCOTY</div>
+    <div class="pill"><i></i>Website update · v2</div>
+  </div>
+
+  <h1>New chain. New look. <em>Same one sentence.</em></h1>
+  <div class="sub">Everything that just shipped on scoty.fun</div>
+
+  <div class="tiles">
+    <div class="tile hot"><div class="h"><span class="ico">⛓</span>Now on Elysium</div><p>Every coin launches on <b>Montra</b>, Elysium's launchpad. Gas paid in <b>$HYPE</b>.</p></div>
+    <div class="tile hot"><div class="h"><span class="ico">⚓</span>$SCOTY is live</div><p>The official token, pinned at the top of Explore.</p><p class="mono">0x3c19…78ac</p></div>
+    <div class="tile"><div class="h"><span class="ico">⚡</span>Smarter launches</div><p>Initial buy inside the launch tx, <b>1–10%</b> trading fee, <b>anti-snipe</b> window.</p></div>
+    <div class="tile"><div class="h"><span class="ico">📈</span>Trade on SCOTY</div><p>Every coin gets a page with a live chart and <b>buy / sell</b> in HYPE.</p></div>
+    <div class="tile"><div class="h"><span class="ico">💜</span>Fresh look</div><p>New Elysium lavender theme and a brand-new logo.</p></div>
+    <div class="tile"><div class="h"><span class="ico">🧹</span>Clean Explore</div><p>Test launches cleared. Only real SCOTY coins are listed.</p></div>
+  </div>
+
+  <div class="foot">
+    <div class="url">scoty<span>.fun</span></div>
+    <div class="tag">Type it. <em>Launch it.</em> · @Scotydotfun</div>
+  </div>
+</div>
+</body>
+</html>
