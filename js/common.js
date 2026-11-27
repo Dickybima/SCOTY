@@ -35,9 +35,9 @@
   document.getElementById("footer").outerHTML = `
   <footer class="foot">
     <a href="index.html" class="brand"><img class="brand-mark" src="assets/logo.png?v=2" alt="">SCOTY</a>
-    <p>Launch and explore tokens on ${CFG.network}. Your wallet signs every transaction. SCOTY never takes custody of your assets.</p>
+    <p>Launch and explore tokens on ${CFG.protocol}, on ${CFG.network}. Your wallet signs every transaction. SCOTY never takes custody of your assets.</p>
     <div class="foot-links"><a href="index.html">Explore</a><a href="create.html">Create</a><a href="profile.html">Profile</a><a href="docs.html">Docs</a><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Use</a></div>
-    <p class="fine">SCOTY is a non-custodial, third-party interface to token launch protocols on ${CFG.network}. Transactions may be irreversible and tokens can lose all value. SCOTY provides no custody, warranties, or financial advice.</p>
+    <p class="fine">SCOTY is a non-custodial, third-party interface to the ${CFG.protocol} launchpad on ${CFG.network}. Transactions may be irreversible and tokens can lose all value. SCOTY provides no custody, warranties, or financial advice.</p>
     <div class="foot-bot"><span>© ${new Date().getFullYear()} SCOTY</span><a class="xlink" href="${CFG.x.url}" target="_blank" rel="noopener" aria-label="SCOTY on X">@${CFG.x.handle}<span class="xbtn"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span></a></div>
   </footer>`;
 
@@ -157,7 +157,7 @@
       await p.request({
         method: "wallet_addEthereumChain",
         params: [{ chainId: hex, chainName: chain.name, rpcUrls: [chain.rpc],
-          nativeCurrency: { name: "Ether", symbol: chain.symbol, decimals: 18 },
+          nativeCurrency: { name: chain.symbol, symbol: chain.symbol, decimals: 18 },
           blockExplorerUrls: [chain.explorer] }],
       });
     }
@@ -181,7 +181,7 @@
     if (!W.address) return W.connect();
     const chain = CFG.chains[0];
     document.getElementById("wmenuH").innerHTML = `${iconHTML(W.info, W.info?.name)}<div><b>${esc(W.info?.name || "Wallet")}</b><small>${short(W.address)}</small></div>`;
-    document.getElementById("wExplorer").href = `${chain.explorer}/address/${W.address}`;
+    document.getElementById("wExplorer").href = chain.addressUrl(W.address);
     document.getElementById("wSwitch").style.display = W.chainId === chain.chainId ? "none" : "";
     const r = btn.getBoundingClientRect();
     menu.style.top = r.bottom + 8 + "px";
@@ -224,7 +224,7 @@
       : `<path d="M10 90 Q40 40 70 70 T130 40 V130 H-10Z" fill="#fff" opacity=".18"/>`;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g${h}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${a} 85% 60%)"/><stop offset="1" stop-color="hsl(${b} 85% 52%)"/></linearGradient></defs><rect width="120" height="120" fill="url(#g${h})"/>${deco}<text x="60" y="${Math.round(60 + fs * 0.36)}" text-anchor="middle" font-family="Poppins,Arial,sans-serif" font-weight="700" font-size="${fs}" letter-spacing="-0.5" fill="#fff">${glyph}</text></svg>`;
   }
-  // Compact version of the generated logo as a data URI, kept under Pons' 512-byte
+  // Compact version of the generated logo as a data URI, kept under 512 bytes
   // logo limit so it can be stored on-chain with the token.
   function hslHex(h, s, l) {
     s /= 100; l /= 100;

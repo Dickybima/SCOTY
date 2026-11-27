@@ -22,7 +22,7 @@
   <div class="narrow">
     <p class="eyebrow">The Studio</p>
     <h1 class="title">Type it. <em>Launch it.</em></h1>
-    <p class="sub">One sentence becomes a full launch package. Edit anything, pick a network, and deploy on Robinhood Chain — all signed by your own wallet.</p>
+    <p class="sub">One sentence becomes a full launch package. Edit anything, pick a network, and launch it on Montra, on Elysium — all signed by your own wallet.</p>
     <div id="demoNote"></div>
 
     <!-- 01 -->
@@ -77,29 +77,43 @@
     <section class="panel locked" id="p3">
       <div class="step-h"><span class="num">03</span><h3>Launch settings</h3></div>
       <div class="chains" id="chains"></div>
-      <p class="status">Priced on an ETH bonding curve, graduates into permanently locked Uniswap v4 liquidity, with a short anti-snipe buy tax at launch.</p>
+      <p class="status">Your coin opens straight into its own Uniswap v4 pool on Montra. Your initial buy goes in the same transaction as the launch, so nobody can buy before you.</p>
 
       <div class="setting">
         <label class="lbl" for="devBuy">Initial buy <span class="opt">optional</span></label>
         <div class="amount">
-          <input class="input" id="devBuy" type="number" min="0" step="0.001" inputmode="decimal" placeholder="0.0">
-          <span class="unit">ETH</span>
+          <input class="input" id="devBuy" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.0">
+          <span class="unit">HYPE</span>
         </div>
         <div class="chips" id="buyChips">
           <button type="button" data-v="0" class="on">None</button>
-          <button type="button" data-v="0.005">0.005</button>
-          <button type="button" data-v="0.01">0.01</button>
-          <button type="button" data-v="0.05">0.05</button>
           <button type="button" data-v="0.1">0.1</button>
+          <button type="button" data-v="0.5">0.5</button>
+          <button type="button" data-v="1">1</button>
+          <button type="button" data-v="2">2</button>
         </div>
-        <p class="note">Buy your own supply the moment the token goes live. Your wallet is exempt from the anti-snipe tax, so you get the opening price.</p>
+        <p class="note">Buy your own supply at the opening price, in the same transaction as the launch.</p>
       </div>
 
       <div class="setting">
-        <label class="lbl" for="tax">Creator fee per trade <b id="taxVal">0%</b></label>
-        <input class="range" id="tax" type="range" min="0" max="100" step="5" value="0">
-        <div class="range-ends"><span>0%</span><span id="taxMax">1%</span></div>
-        <p class="note">Taken from every buy and sell of your token and paid to your wallet. Claim it any time on your <a class="link" href="profile.html">Profile</a>.</p>
+        <label class="lbl">Trading fee <b id="feeVal">2%</b></label>
+        <div class="chips" id="feeChips"></div>
+        <p class="note">Charged on every buy and sell of your coin. Your side goes to the fee recipient below; Montra keeps a protocol part.</p>
+      </div>
+
+      <div class="setting">
+        <label class="lbl">Anti-snipe window <b id="snipeVal">None</b></label>
+        <div class="chips" id="snipeChips"></div>
+        <p class="note">During this window right after launch, other buyers pay a much higher fee (starting near 99%), so bots can't snipe your coin.</p>
+      </div>
+
+      <div class="setting">
+        <label class="lbl">Fees go to</label>
+        <div class="chips" id="feeToChips">
+          <button type="button" data-v="creator" class="on">You</button>
+          <button type="button" data-v="holders">Holders</button>
+        </div>
+        <p class="note" id="feeToNote">Your side of every trading fee is paid to your wallet.</p>
       </div>
     </section>
 

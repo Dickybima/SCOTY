@@ -1,6 +1,6 @@
 # SCOTY
 
-Token launchpad on **Pons v2** (Robinhood Chain, chain ID 4663) — "Type it. Launch it."
+Token launchpad on **Montra** (montramarkets.xyz) on **Elysium** (chain ID 99901, gas in HYPE) — "Type it. Launch it."
 
 - `index.html` — **Explore**: browse launched tokens (search, Trending / New / Market cap / Mine).
 - `profile.html` — **Profile**: connected wallet's creator fees (claimable from the Pons V2 fee escrow), portfolio balance, token positions and SCOTY launches. Share a public profile with `profile.html?address=0x…`.

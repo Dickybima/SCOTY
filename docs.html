@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Docs — SCOTY</title>
-<meta name="description" content="How SCOTY works: describe a token in one sentence, review the package, and launch it on ponsfamily.com with your own wallet.">
+<meta name="description" content="How SCOTY works: describe a token in one sentence, review the package, and launch it on Montra (Elysium) with your own wallet.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/favicon.png?v=2">
@@ -24,7 +24,7 @@
     <header class="docs-head">
       <p class="eyebrow">Docs</p>
       <h1 class="title">How <em>SCOTY</em> works</h1>
-      <p class="lead">SCOTY is a one-sentence launchpad. You describe a token in one line, SCOTY drafts a complete, launch-ready package, and you deploy it to the <a class="link" href="https://ponsfamily.com" target="_blank" rel="noopener">ponsfamily.com</a> protocol on Robinhood Chain in one click. Every transaction is signed by your own wallet. SCOTY never holds your funds or keys.</p>
+      <p class="lead">SCOTY is a one-sentence launchpad. You describe a token in one line, SCOTY drafts a complete, launch-ready package, and you launch it on <a class="link" href="https://montramarkets.xyz" target="_blank" rel="noopener">Montra</a>, on Elysium, in one click. Every transaction is signed by your own wallet. SCOTY never holds your funds or keys.</p>
     </header>
 
     <div class="docs-grid">
@@ -33,12 +33,12 @@
         <a href="#overview">Overview</a>
         <a href="#how-it-works">How it works</a>
         <a href="#launches">How launches work</a>
-        <a href="#pairs">Quote pairs</a>
+        <a href="#settings">Launch settings</a>
         <a href="#images">Token images</a>
         <a href="#fees">Fees</a>
         <a href="#wallet">Wallet</a>
         <a href="#trading">Trading</a>
-        <a href="#profile">Profile &amp; creator fees</a>
+        <a href="#profile">Profile</a>
         <a href="#safety">Safety</a>
         <a href="#faq">FAQ</a>
       </nav>
@@ -46,88 +46,90 @@
       <div class="docs-body">
         <section id="overview" class="panel">
           <h2>Overview</h2>
-          <p>Launching a token usually means writing a contract, wiring liquidity, drawing a logo, and writing all the copy. SCOTY collapses that into three steps: <b>describe, review, deploy</b>. SCOTY handles the creative and configuration work; the chain and your wallet handle settlement.</p>
+          <p>Launching a token usually means writing a contract, wiring liquidity, drawing a logo, and writing all the copy. SCOTY collapses that into three steps: <b>describe, review, launch</b>. SCOTY handles the creative and configuration work; Montra, the chain and your wallet handle the rest.</p>
         </section>
 
         <section id="how-it-works" class="panel">
           <h2>How it works</h2>
           <ol class="steps">
-            <li><span class="num">01</span><div><h3>Pitch it in a line</h3><p>Type one sentence describing your idea, or hit <b>Roulette</b> for a random one. That is the only required input.</p></div></li>
-            <li><span class="num">02</span><div><h3>SCOTY drafts the package</h3><p>You get a name, ticker, logo and description — ready to deploy.</p></div></li>
-            <li><span class="num">03</span><div><h3>Review and edit</h3><p>Everything is editable: tweak the name, ticker, description, logo (generate a new look or paste a link to your own image) and socials. Then set your launch settings: an optional initial buy of your own supply and your creator fee per trade.</p></div></li>
-            <li><span class="num">04</span><div><h3>Deploy to ponsfamily.com</h3><p>One signed transaction from your wallet launches the token straight onto the ponsfamily.com protocol. It then shows up in <a class="link" href="index.html">Explore</a> and on your <a class="link" href="profile.html">Profile</a>.</p></div></li>
+            <li><span class="num">01</span><div><h3>Start</h3><p><b>Generate</b>: type one sentence (or hit <b>Roulette</b>) and SCOTY drafts the package. Or go <b>Manual</b> and fill it in yourself with your own logo.</p></div></li>
+            <li><span class="num">02</span><div><h3>Make it yours</h3><p>Everything is editable: name, ticker, description, logo (generate a new look, upload your own image or paste a link) and socials.</p></div></li>
+            <li><span class="num">03</span><div><h3>Set it up</h3><p>Pick your trading fee and anti-snipe window, choose who gets the fees, and add an optional initial buy.</p></div></li>
+            <li><span class="num">04</span><div><h3>Launch on Montra</h3><p>One signed transaction from your wallet launches the coin on <a class="link" href="https://montramarkets.xyz" target="_blank" rel="noopener">montramarkets.xyz</a>. It then shows up in <a class="link" href="index.html">Explore</a> and on your <a class="link" href="profile.html">Profile</a>.</p></div></li>
           </ol>
         </section>
 
         <section id="launches" class="panel">
           <h2>How launches work</h2>
-          <p>Every launch on SCOTY goes through the ponsfamily.com launch factory on Robinhood Chain in one transaction — there are no versions or settings to choose.</p>
+          <p>Every launch on SCOTY goes through Montra's launch factory on Elysium in a single transaction.</p>
           <div class="cards2">
             <div class="mini">
-              <div class="mini-h"><b>One signed transaction</b><span class="pill">ponsfamily.com · Robinhood Chain</span></div>
+              <div class="mini-h"><b>One signed transaction</b><span class="pill">Montra · Elysium</span></div>
               <ul>
-                <li>Creates your token with its own bonding curve</li>
-                <li>Price follows the curve as people buy and sell</li>
-                <li>When the curve completes, the token graduates into a Uniswap v4 pool</li>
-                <li>Graduated liquidity is permanently locked</li>
+                <li>Creates your coin (1,000,000,000 supply)</li>
+                <li>Opens its own Uniswap v4 pool through the Montra hook</li>
+                <li>Your initial buy goes in the same transaction</li>
                 <li>Tradable straight away</li>
               </ul>
             </div>
             <div class="mini">
-              <div class="mini-h"><b>Transparent cost</b><span class="pill">ETH</span></div>
+              <div class="mini-h"><b>Paid in HYPE</b><span class="pill">HYPE</span></div>
               <ul>
-                <li>Launch fee is read live from the factory at deploy time</li>
-                <li>Gas is paid in ETH (Robinhood Chain's native currency)</li>
-                <li>A short anti-snipe tax protects the first seconds of trading</li>
+                <li>Coins are paired with native HYPE</li>
+                <li>Montra's launch fee is read live and shown before you sign</li>
+                <li>Gas is paid in HYPE (Elysium's native currency)</li>
                 <li>Non-custodial: your wallet signs everything</li>
               </ul>
             </div>
           </div>
         </section>
 
-        <section id="pairs" class="panel">
-          <h2>Quote pairs</h2>
-          <p>Tokens launched on SCOTY are quoted in native <b>ETH</b>. The ponsfamily.com protocol can also support other pair assets that its factory approves on-chain; SCOTY uses ETH so every launch works the same way.</p>
+        <section id="settings" class="panel">
+          <h2>Launch settings</h2>
+          <p><b>Trading fee.</b> Pick the fee charged on every buy and sell of your coin (Montra offers 1%, 2%, 3%, 5% and 10%). Your side goes to the fee recipient; Montra keeps a protocol part.</p>
+          <p><b>Anti-snipe window.</b> For a short window right after launch (from a few seconds up to 30 minutes), other buyers pay a much higher fee that starts near 99% and falls away, so bots can't snipe your coin.</p>
+          <p><b>Fees go to.</b> Your side of the fees can go to you, or be streamed to your coin's holders.</p>
+          <p><b>Initial buy.</b> Optionally buy your own supply at the opening price. It is part of the launch transaction itself, so nobody can buy before you. SCOTY reads the exact amount you'll get from the chain and allows 1% of slippage.</p>
         </section>
 
         <section id="images" class="panel">
           <h2>Token images</h2>
-          <p>Alongside the text package, SCOTY generates a clean logo mark for your token. Hit <b>New look</b> to generate another one on demand, upload your own image, or paste a link to one (<code>https://</code> or <code>ipfs://</code>). The logo is stored on-chain with the token, and Pons caps it at 512 bytes, so a hosted link is used rather than the image itself. The generated mark is compact enough to be stored directly.</p>
+          <p>Alongside the text package, SCOTY generates a clean logo mark for your token. Hit <b>New look</b> to generate another one, upload your own image, or paste a link to one (<code>https://</code> or <code>ipfs://</code>). Logos and token metadata are hosted so Montra, explorers and wallets can show them.</p>
         </section>
 
         <section id="fees" class="panel">
           <h2>Fees</h2>
-          <p>Launching costs the ponsfamily.com launch fee, read live from the factory at deploy time and shown in the studio before you sign. SCOTY itself does not add a surcharge — you only pay that protocol fee and network gas (in ETH).</p>
-          <p><b>Initial buy.</b> Optionally buy your own supply right after launch. Your wallet is exempt from the opening anti-snipe tax, so you get the opening price. It is a second transaction your wallet confirms, with a 5% slippage guard.</p>
-          <p><b>Creator fee.</b> Choose a fee from 0% up to the protocol maximum, taken from every buy and sell of your token and paid to your wallet. Claim it any time on your Profile.</p>
+          <p>Launching costs Montra's launch fee (read live from the factory and shown before you sign) plus network gas in HYPE. SCOTY itself adds no surcharge.</p>
+          <p>Trading fees are charged by Montra on every buy and sell, at the rate the creator picked at launch.</p>
         </section>
 
         <section id="wallet" class="panel">
           <h2>Connecting a wallet</h2>
-          <p>Click <b>Connect Wallet</b> and pick your wallet. Any browser wallet works out of the box — MetaMask, Rabby, OKX, Coinbase Wallet, Trust Wallet, Phantom and more are detected automatically. On mobile, open SCOTY inside your wallet app's browser. SCOTY is non-custodial: connecting only shares your public address so transactions can be built for you to sign.</p>
+          <p>Click <b>Connect Wallet</b> and pick your wallet. Any browser wallet works out of the box — MetaMask, Rabby, OKX, Coinbase Wallet, Trust Wallet, Phantom and more are detected automatically. SCOTY will ask your wallet to add or switch to Elysium. On mobile, open SCOTY inside your wallet app's browser. SCOTY is non-custodial: connecting only shares your public address so transactions can be built for you to sign.</p>
         </section>
 
         <section id="trading" class="panel">
           <h2>Trading</h2>
-          <p>Every token has its own page with a live market-cap chart, price, holders, bonding-curve progress and recent transactions. Buy with ETH or sell back to the curve right there. Your first sell asks for a one-time approval so the curve can take your tokens. Trades use a slippage guard you can set (5% by default). Once a token graduates, it trades in its Uniswap v4 pool instead.</p>
+          <p>Every coin has its own page with a live market-cap chart, price, trading fee and recent trades, read straight from its Montra pool. Buy with HYPE or sell right there, through Montra's router. Your first sell asks for a one-time approval so the router can take your coins. Trades use a slippage guard you can set (5% by default).</p>
         </section>
 
         <section id="profile" class="panel">
-          <h2>Profile &amp; creator fees</h2>
-          <p>Every token you launch pays creator fees to your wallet. Your <a class="link" href="profile.html">Profile</a> shows fees ready to claim, your portfolio balance, your positions and every token you launched on SCOTY. Claim your fees in one click; share your profile with the <b>Share</b> button.</p>
+          <h2>Profile</h2>
+          <p>Your <a class="link" href="profile.html">Profile</a> shows your portfolio balance, your positions in SCOTY coins and every coin you launched. Montra sends your side of the trading fees straight to your wallet (or to holders) as they build up, so there is nothing to claim. Share your profile with the <b>Share</b> button.</p>
         </section>
 
         <section id="safety" class="panel">
           <h2>Safety &amp; non-custodial</h2>
-          <p>SCOTY is a third-party interface to ponsfamily.com, not an official ponsfamily.com product. It never takes custody of assets, and never sees your private keys or seed phrase. Transactions are irreversible once signed, and tokens can be highly volatile or lose all value. Nothing here is financial advice — do your own research.</p>
+          <p>SCOTY is a third-party interface to Montra (montramarkets.xyz), not an official Montra product. It never takes custody of assets, and never sees your private keys or seed phrase. Transactions are irreversible once signed, and tokens can be highly volatile or lose all value. Nothing here is financial advice — do your own research.</p>
         </section>
 
         <section id="faq" class="panel">
           <h2>FAQ</h2>
-          <details><summary>Do I need to code?</summary><p>No. Type one sentence, review the package, and sign one transaction. SCOTY builds everything else.</p></details>
-          <details><summary>Does SCOTY hold my tokens or funds?</summary><p>No. SCOTY is non-custodial. Your wallet signs every transaction and your tokens and fees go straight to your wallet.</p></details>
-          <details><summary>Which chain is this?</summary><p>Robinhood Chain (chain ID 4663). Gas is paid in ETH. SCOTY will prompt your wallet to add or switch to it automatically.</p></details>
-          <details><summary>Can I edit what SCOTY generates?</summary><p>Yes. The name, ticker, description, image and socials are all editable before you launch.</p></details>
+          <details><summary>Do I need to code?</summary><p>No. Type one sentence (or fill in your own details), pick your settings, and sign one transaction. SCOTY builds everything else.</p></details>
+          <details><summary>Does SCOTY hold my tokens or funds?</summary><p>No. SCOTY is non-custodial. Your wallet signs every transaction, and your coins and fees go straight to your wallet.</p></details>
+          <details><summary>Which chain is this?</summary><p>Elysium, Kinetiq's Hyperliquid L2 (chain ID 99901). Gas is paid in HYPE. SCOTY will prompt your wallet to add or switch to it automatically.</p></details>
+          <details><summary>Will my coin show up on Montra?</summary><p>Yes. Every SCOTY launch is a regular Montra launch, so it trades on montramarkets.xyz as well as on SCOTY.</p></details>
+          <details><summary>Can I edit what SCOTY generates?</summary><p>Yes. The name, ticker, description, logo and socials are all editable before you launch.</p></details>
         </section>
 
         <div class="row docs-cta">

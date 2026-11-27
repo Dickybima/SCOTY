@@ -1,96 +1,41 @@
-// Shared on-chain data: SCOTY launches, merged with local launches
+// SCOTY launches: the index kept by /api/launches (every entry verified on-chain),
+// merged with launches made from this browser, plus a browser cache for instant loads.
 (function () {
   const { CFG, W, Store } = window.SCOTY;
   const chain = CFG.chains[0];
 
-  // ── On-chain feed: ONLY launches made through SCOTY ─────────
-  // Every SCOTY launch calls the factory's launchToken with a salt that
-  // starts with CFG.launchTag. We scan the factory's incoming transactions
-  // (Blockscout API), decode their input and keep the tagged ones.
   async function getJSON(url) {
     const r = await fetch(url, { headers: { accept: "application/json" } });
     if (!r.ok) throw new Error(r.status);
     return r.json();
   }
-
-  const MAX_PAGES = 20; // ~1000 most recent factory txs
-  const TAG = CFG.launchTag.toLowerCase();
-  const TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
-  const ZERO_TOPIC = "0x" + "0".repeat(64);
   const safeImg = (u) => (typeof u === "string" && /^(data:image\/(png|jpe?g|webp|gif|svg\+xml)[;,]|https:\/\/|ipfs:\/\/)/i.test(u) ? u : null);
 
-  async function scotyLaunchTxs() {
-    const iface = new ethers.Interface(CFG.factoryAbi);
-    const selector = iface.getFunction("launchToken").selector;
-    const found = [];
-    let params = "";
-    for (let page = 0; page < MAX_PAGES; page++) {
-      const data = await getJSON(`${chain.explorerApi}/addresses/${chain.factory}/transactions?filter=to${params}`);
-      for (const tx of data.items || []) {
-        if (tx.status && tx.status !== "ok") continue;
-        let input = tx.raw_input;
-        if (input === undefined) {
-          if (tx.method && !/launchToken|a72101af/i.test(tx.method)) continue;
-          input = (await getJSON(`${chain.explorerApi}/transactions/${tx.hash}`).catch(() => ({}))).raw_input;
-        }
-        if (!input || !input.toLowerCase().startsWith(selector)) continue;
-        let p;
-        try { p = iface.parseTransaction({ data: input }).args[0]; } catch (_) { continue; }
-        if (!p.salt.toLowerCase().startsWith(TAG)) continue; // not launched via SCOTY
-        found.push({ tx, p });
-      }
-      const next = data.next_page_params;
-      if (!next) break;
-      params = "&" + new URLSearchParams(next).toString();
-    }
-    return found;
-  }
-
-  async function tokenAddressOf(hash) {
-    const logs = await getJSON(`${chain.explorerApi}/transactions/${hash}/logs`);
-    const mint = (logs.items || []).find((l) => l.topics && l.topics[0] === TRANSFER && l.topics[1] === ZERO_TOPIC);
-    return mint && (mint.address.hash || mint.address);
-  }
-
-  // All SCOTY launches found on-chain (newest first)
-  async function scanFromBrowser() {
-    if (!chain.factory || !chain.explorerApi || !window.ethers) return [];
-    const launches = await scotyLaunchTxs();
-    return (await Promise.all(launches.map(async ({ tx, p }) => {
-      const address = await tokenAddressOf(tx.hash).catch(() => null);
-      if (!address) return null;
-      const tok = await getJSON(`${chain.explorerApi}/tokens/${address}`).catch(() => ({}));
-      return {
-        name: p.name, symbol: p.symbol, description: p.description,
-        image: safeImg(p.logo), twitter: /^https:\/\//.test(p.socials.twitter) ? p.socials.twitter : null,
-        website: /^https:\/\//.test(p.socials.website) ? p.socials.website : null,
-        address, creator: (tx.from && (tx.from.hash || tx.from)) || p.creatorFeeRecipient, tx: tx.hash,
-        createdAt: tx.timestamp ? Date.parse(tx.timestamp) : Date.now(),
-        mcap: Number(tok.circulating_market_cap || 0) || (Number(tok.exchange_rate || 0) * Number(tok.total_supply || 0) / 10 ** Number(tok.decimals || 18)) || 0,
-        holders: Number(tok.holders_count || tok.holders || 0),
-        change: 0, progress: null, chain: chain.key,
-      };
-    }))).filter(Boolean);
-  }
-
-  // merge on-chain launches with ones made from this browser (instant, before indexing)
-  function merge(onchain) {
+  // merge indexed launches with ones made from this browser (shown instantly, before indexing)
+  function merge(indexed) {
     const map = new Map();
-    for (const t of onchain) map.set(t.address.toLowerCase(), t);
+    for (const t of indexed) map.set(t.address.toLowerCase(), t);
     for (const t of Store.all()) {
-      if (!t.address) continue;
-      if (t.demo && chain.factory) continue; // hide old demo launches once live
+      if (!t.address || t.chain !== chain.key) continue; // launches from older networks are not shown
       const k = t.address.toLowerCase();
-      map.set(k, map.has(k) ? { ...map.get(k), description: t.description, image: map.get(k).image || t.image, twitter: t.twitter, website: t.website, mine: true } : t);
+      map.set(k, map.has(k) ? { ...map.get(k), mine: true } : t);
     }
     for (const a of CFG.hiddenTokens || []) map.delete(String(a).toLowerCase());
     const me = W.address && W.address.toLowerCase();
     return [...map.values()].map((t) => ({ ...t, mine: t.mine || (me && t.creator && t.creator.toLowerCase() === me) }));
   }
 
+  // Launches from this browser that the index doesn't have yet (e.g. the tab closed
+  // before registering) are sent again; the server verifies each on-chain.
+  function healIndex(indexed) {
+    const have = new Set(indexed.map((t) => t.address.toLowerCase()));
+    for (const t of Store.all()) {
+      if (t.chain !== chain.key || !t.tx || have.has((t.address || "").toLowerCase())) continue;
+      fetch(CFG.launchesUrl, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tx: t.tx }) }).catch(() => {});
+    }
+  }
 
-  // ── Fast path: server-side scan (CDN cached), plus a browser cache ──────────
-  const CACHE_KEY = "scoty.launchCache.v1";
+  const CACHE_KEY = "scoty.launchCache.elysium.v1";
   function cached() {
     try {
       const c = JSON.parse(localStorage.getItem(CACHE_KEY));
@@ -102,20 +47,17 @@
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), launches })); } catch (_) {}
   }
   const clean = (t) => ({ ...t, image: safeImg(t.image), twitter: /^https:\/\//.test(t.twitter || "") ? t.twitter : null,
-    website: /^https:\/\//.test(t.website || "") ? t.website : null, change: 0, progress: null, chain: chain.key });
+    website: /^https:\/\//.test(t.website || "") ? t.website : null, chain: chain.key, mcap: t.mcap || 0 });
 
   async function loadLaunches() {
-    if (CFG.launchesUrl) {
-      try {
-        const ctl = new AbortController();
-        const timer = setTimeout(() => ctl.abort(), 30000);
-        const r = await fetch(CFG.launchesUrl, { signal: ctl.signal, headers: { accept: "application/json" } });
-        clearTimeout(timer);
-        const d = r.ok ? await r.json() : null;
-        if (d && Array.isArray(d.launches)) { const list = d.launches.map(clean); saveCache(list); return list; }
-      } catch (e) { console.warn("launch index unavailable, scanning from the browser", e); }
-    }
-    const list = await scanFromBrowser();
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 20000);
+    const r = await fetch(CFG.launchesUrl, { signal: ctl.signal, headers: { accept: "application/json" } }).finally(() => clearTimeout(timer));
+    const d = r.ok ? await r.json() : null;
+    if (!d || !Array.isArray(d.launches)) throw new Error("launch index unavailable");
+    let list = d.launches.map(clean);
+    healIndex(list);
+    if (window.SCOTY.Market) list = await window.SCOTY.Market.withMarketCaps(list).catch(() => list);
     saveCache(list);
     return list;
   }

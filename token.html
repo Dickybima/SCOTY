@@ -41,8 +41,8 @@
         <section class="tk-stats">
           <div class="stat"><small>Market cap</small><b id="stMcap">—</b><span id="stMcapEth"></span></div>
           <div class="stat"><small>Price</small><b id="stPrice">—</b><span id="stPriceEth"></span></div>
-          <div class="stat"><small>Holders</small><b id="stHolders">—</b><span>&nbsp;</span></div>
-          <div class="stat"><small>Creator fee</small><b id="stTax">—</b><span id="stFee"></span></div>
+          <div class="stat"><small>Supply</small><b id="stSupply">—</b><span>&nbsp;</span></div>
+          <div class="stat"><small>Trading fee</small><b id="stTax">—</b><span id="stFee"></span></div>
         </section>
 
         <!-- chart -->
@@ -54,11 +54,10 @@
           <div class="chart" id="chart"></div>
         </section>
 
-        <!-- bonding progress -->
+        <!-- pool -->
         <section class="panel tk-prog">
-          <div class="tk-prog-h"><b>Bonding curve</b><span class="mono" id="pgPct">0%</span></div>
-          <div class="pgbar"><i id="pgFill"></i></div>
-          <p class="note" id="pgNote">When the curve fills, the token graduates into a Uniswap v4 pool with permanently locked liquidity.</p>
+          <div class="tk-prog-h"><b>Montra pool</b><a class="link mono" id="montraLink" target="_blank" rel="noopener">montramarkets.xyz ↗</a></div>
+          <p class="note" id="pgNote">This coin trades in its own Uniswap v4 pool on Montra, on Elysium. Buy and sell right here, or on montramarkets.xyz.</p>
         </section>
 
         <!-- trades -->
@@ -80,7 +79,7 @@
           <label class="lbl" for="amt"><span id="amtLbl">You pay</span><span class="bal" id="balLbl"></span></label>
           <div class="amount">
             <input class="input" id="amt" type="number" min="0" step="any" inputmode="decimal" placeholder="0.0">
-            <span class="unit" id="amtUnit">ETH</span>
+            <span class="unit" id="amtUnit">HYPE</span>
           </div>
           <div class="chips" id="qChips"></div>
           <div class="quote" id="quote">
@@ -97,7 +96,7 @@
           <p id="tkDesc"></p>
           <div class="kv"><span>Token</span><a class="mono link" id="tkAddr" target="_blank" rel="noopener"></a></div>
           <div class="kv"><span>Creator</span><a class="mono link" id="tkCreator"></a></div>
-          <div class="kv"><span>Curve</span><a class="mono link" id="tkCurve" target="_blank" rel="noopener"></a></div>
+          <div class="kv"><span>Pool</span><span class="mono" id="tkPool"></span></div>
         </section>
       </aside>
     </div>
@@ -108,6 +107,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 <script src="js/config.js"></script>
 <script src="js/common.js"></script>
+<script src="js/market.js"></script>
 <script src="js/feed.js"></script>
 <script src="js/token.js"></script>
 </body>

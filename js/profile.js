@@ -1,18 +1,15 @@
 (function () {
-  const { CFG, W, Feed, logoSVG, logoHTML, esc, fmtUsd, ago, short } = window.SCOTY;
+  const { CFG, W, Feed, Market, logoSVG, logoHTML, esc, fmtUsd, ago, short } = window.SCOTY;
   const $ = (id) => document.getElementById(id);
   const chain = CFG.chains[0];
   const viewing = new URLSearchParams(location.search).get("address"); // public profile link
 
-  let addr = null, tab = "positions", positions = null, launches = null, coinPrice = 0, feeWei = 0n, loadId = 0;
+  let addr = null, tab = "positions", positions = null, launches = null, coinPrice = 0, loadId = 0;
 
   const fmtNum = (n, d = 6) => (n === 0 ? "0" : n < 1e-6 ? n.toExponential(2) : n.toLocaleString("en-US", { maximumFractionDigits: d }));
   const usd = (n) => (n >= 1000 ? fmtUsd(n) : "$" + n.toFixed(2));
 
-  function readProvider() {
-    if (W.provider && W.chainId === chain.chainId) return new ethers.BrowserProvider(W.provider);
-    return new ethers.JsonRpcProvider(chain.rpc, chain.chainId, { staticNetwork: true });
-  }
+  const readProvider = () => window.SCOTY.readProvider(chain);
 
   // ── decide whose profile to show ───────────────────────────
   function sync() {
@@ -22,93 +19,54 @@
     $("content").hidden = !target;
     if (!target) return;
     $("disc").hidden = !own;
-    $("claim").hidden = !own;
     $("who").textContent = own ? "Your SCOTY profile" : "SCOTY profile";
-    if (addr && addr.toLowerCase() === target.toLowerCase()) { renderFees(); return; }
+    if (addr && addr.toLowerCase() === target.toLowerCase()) return;
     addr = ethers.getAddress(target);
     load();
   }
 
   async function load() {
     const id = ++loadId;
-    positions = launches = null; feeWei = 0n;
+    positions = launches = null;
     $("addr").textContent = addr;
     $("avatar").innerHTML = logoSVG(addr, addr.slice(2, 4));
-    $("explorerLink").href = `${chain.explorer}/address/${addr}`;
+    $("explorerLink").href = chain.addressUrl(addr);
+    $("montraProfile").href = CFG.protocolUrl;
     $("feeEth").textContent = "…"; $("pfUsd").textContent = "…"; $("pfEth").textContent = "";
     renderTab();
 
-    const api = chain.explorerApi;
-    const [stats, ethWei, fee, tokens, all] = await Promise.all([
-      Feed.getJSON(`${api}/stats`).catch(() => ({})),
-      readProvider().getBalance(addr).catch(() => null),
-      chain.feeEscrow ? new ethers.Contract(chain.feeEscrow, CFG.feeEscrowAbi, readProvider()).balanceOf(addr).catch(() => null) : null,
-      Feed.getJSON(`${api}/addresses/${addr}/tokens?type=ERC-20`).catch(() => null),
-      Feed.loadLaunches().catch(() => []),
+    const rp = readProvider();
+    const [hypeUsd, hypeWei, all] = await Promise.all([
+      Market.hypeUsd(),
+      rp.getBalance(addr).catch(() => null),
+      Feed.loadLaunches().catch(() => Feed.cached() || []),
     ]);
     if (id !== loadId) return;
-    coinPrice = Number(stats.coin_price || 0);
+    coinPrice = hypeUsd;
+    const list = Feed.merge(all);
 
-    // creator fees
-    feeWei = fee == null ? null : fee;
-    renderFees();
+    // launches by this wallet
+    const me = addr.toLowerCase();
+    launches = list.filter((t) => t.creator && t.creator.toLowerCase() === me).sort((a, b) => b.createdAt - a.createdAt);
+    $("feeEth").textContent = String(launches.length);
+    $("feeUsd").textContent = launches.length === 1 ? "Coin launched on SCOTY" : "Coins launched on SCOTY";
 
-    // positions
-    positions = tokens ? (tokens.items || []).map((it) => {
-      const t = it.token || {};
-      const amount = Number(it.value || 0) / 10 ** Number(t.decimals || 18);
-      const price = Number(t.exchange_rate || 0);
-      return { name: t.name || "Unknown", symbol: t.symbol || "???", address: t.address_hash || t.address, image: Feed.safeImg(t.icon_url), amount, value: amount * price };
-    }).filter((p) => p.amount > 0).sort((a, b) => b.value - a.value) : [];
+    // positions: balances of SCOTY coins, valued at each pool's price
+    const withPx = await Market.withMarketCaps(list.filter((t) => t.poolId)).catch(() => list);
+    const bal = await Promise.all(withPx.map((t) => new ethers.Contract(t.address, CFG.tokenAbi, rp).balanceOf(addr).catch(() => 0n)));
+    if (id !== loadId) return;
+    positions = withPx.map((t, i) => {
+      const amount = Number(ethers.formatUnits(bal[i], 18));
+      return { ...t, amount, value: amount * (t.priceHype || 0) * coinPrice };
+    }).filter((p) => p.amount > 0).sort((a, b) => b.value - a.value);
 
     // portfolio
-    const eth = ethWei == null ? null : Number(ethers.formatEther(ethWei));
-    const total = (eth || 0) * coinPrice + positions.reduce((s, p) => s + p.value, 0);
-    $("pfUsd").textContent = eth == null && !tokens ? "—" : usd(total);
-    $("pfEth").textContent = eth == null ? "Balance unavailable" : `${fmtNum(eth)} ${chain.symbol} + ${positions.length} token${positions.length === 1 ? "" : "s"}`;
-
-    // launches by this wallet (on-chain + this browser)
-    const me = addr.toLowerCase();
-    launches = Feed.merge(all).filter((t) => t.creator && t.creator.toLowerCase() === me).sort((a, b) => b.createdAt - a.createdAt);
+    const hype = hypeWei == null ? null : Number(ethers.formatEther(hypeWei));
+    const total = (hype || 0) * coinPrice + positions.reduce((s, p) => s + p.value, 0);
+    $("pfUsd").textContent = hype == null ? "—" : coinPrice ? usd(total) : fmtNum(hype) + " " + chain.symbol;
+    $("pfEth").textContent = hype == null ? "Balance unavailable" : `${fmtNum(hype)} ${chain.symbol} + ${positions.length} SCOTY coin${positions.length === 1 ? "" : "s"}`;
     renderTab();
   }
-
-  function renderFees() {
-    if (feeWei == null) {
-      $("feeEth").textContent = "—";
-      $("feeUsd").textContent = "Couldn't read creator fees right now";
-      $("claim").disabled = true;
-      return;
-    }
-    const eth = Number(ethers.formatEther(feeWei));
-    $("feeEth").textContent = `${fmtNum(eth)} ${chain.symbol}`;
-    $("feeUsd").textContent = `${usd(eth * coinPrice)} · Across every launch paid to your wallet`;
-    $("claim").disabled = !(feeWei > 0n) || !W.address;
-  }
-
-  // ── claim ──────────────────────────────────────────────────
-  $("claim").onclick = async () => {
-    const st = $("claimStatus");
-    const set = (m, c = "") => { st.className = "status " + c; st.innerHTML = m; };
-    try {
-      $("claim").disabled = true;
-      if (W.chainId !== chain.chainId) { set("Switching network…"); await W.switchChain(chain); }
-      const signer = await new ethers.BrowserProvider(W.provider).getSigner();
-      const escrow = new ethers.Contract(chain.feeEscrow, CFG.feeEscrowAbi, signer);
-      const amount = await escrow.balanceOf(W.address);
-      if (amount === 0n) { set("Nothing to claim yet."); return; }
-      set("Confirm the claim in your wallet…");
-      const tx = await escrow.claim(amount);
-      set(`Claiming… <a href="${chain.explorer}/tx/${tx.hash}" target="_blank" rel="noopener">view tx ↗</a>`);
-      await tx.wait();
-      set(`✅ Claimed ${fmtNum(Number(ethers.formatEther(amount)))} ${chain.symbol}`, "ok");
-      load();
-    } catch (e) {
-      console.error(e);
-      set("Claim failed: " + esc(e.code === "ACTION_REJECTED" ? "you rejected the transaction" : e.shortMessage || e.message), "err");
-      renderFees();
-    }
-  };
 
   // ── tabs ───────────────────────────────────────────────────
   $("ptabs").querySelectorAll("button").forEach((b) => (b.onclick = () => {

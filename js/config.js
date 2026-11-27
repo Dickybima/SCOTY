@@ -1,114 +1,87 @@
 // ─────────────────────────────────────────────────────────────
-// SCOTY on Robinhood Chain — launches go straight to the Pons V2
-// launch factory, so every token is live on Pons the moment it is
-// created and shows up in Explore.
+// SCOTY on Elysium — launches go straight to Montra (montramarkets.xyz).
 //
-// Factory address and interface taken from Kickpad's open-source
-// integration (github.com/kickpadfamily/contract, src/interfaces/IPonsV2.sol)
-// and Pons V2 docs. Verify before large launches.
+// Elysium is Kinetiq's Hyperliquid L2 (chain 99901, gas in HYPE). Montra opens
+// every coin in its own Uniswap v4 pool through the Montra hook; the creator's
+// first buy rides in the same transaction as the launch.
+//
+// Addresses: Montra LaunchFactory / LaunchRouter / hook as used by public
+// integrations that launch and trade on montramarkets.xyz, the shared Uniswap v4
+// PoolManager and StateView on Elysium, and the Montra registry DefiLlama reads.
+// RPC and explorer from the Hyperlane chain registry. Verify before large launches.
 // ─────────────────────────────────────────────────────────────
 window.SCOTY_CONFIG = {
-  protocol: "Pons v2",
-  network: "Robinhood Chain",
+  protocol: "Montra",
+  protocolUrl: "https://montramarkets.xyz",
+  network: "Elysium",
   x: { handle: "Scotydotfun", url: "https://x.com/Scotydotfun" },
 
   chains: [
     {
-      key: "robinhood",
-      name: "Robinhood Chain",
-      chainId: 4663,
-      symbol: "ETH",
-      rpc: "https://rpc.mainnet.chain.robinhood.com",
-      explorer: "https://robinhoodchain.blockscout.com",
-      explorerApi: "https://robinhoodchain.blockscout.com/api/v2",
-      factory: "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e", // Pons V2 launch factory
-      launchConfigId: 0,
-      feeEscrow: "0xd3AFEB2a57f70eF218Aa82451c51B2fb0416Ac9e", // Pons V2 creator-fee escrow
+      key: "elysium",
+      name: "Elysium",
+      chainId: 99901,
+      symbol: "HYPE",
+      coingeckoId: "hyperliquid",
+      rpc: "https://rpc-elysium-mainnet.t.conduit.xyz",
+      explorer: "https://elysium.kinetiq.xyz/explorer",
+      txUrl: (h) => `https://elysium.kinetiq.xyz/explorer/transaction/${h}`,
+      addressUrl: (a) => `https://elysium.kinetiq.xyz/explorer/address/${a}`,
+      tokenUrl: (a) => `https://elysium.kinetiq.xyz/explorer/address/${a}`,
+      montraTokenUrl: (a) => `https://montramarkets.xyz/token/${a}`,
+      // Montra
+      factory: "0x38d3ef3a06d18fa3286fb5deafe611be725fcd15",   // LaunchFactory
+      router: "0xc6e9a8e1a99023b67067b8a3605403b8d7b3a157",    // LaunchRouter (buy / sell)
+      lens: "0xb4c202910c40c3a83f6c55683460790aaec487d4",      // seedPreview for first-buy maths
+      hook: "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",      // Montra v4 hook
+      registry: "0xF1E2FA75422F889e565F3142bdbf60B28dce2aa7",
+      // Uniswap v4 on Elysium (shared PoolManager)
+      poolManager: "0xe2e105d3f7209a9da11f83ccf3e7398a753823f1",
+      stateView: "0x27eD73aE0652fdCf71d6793412A7525f32bE9dfE",
+      factoryDeployBlock: 588508,
     },
   ],
 
   // On-chain marker: every launch from this site starts its salt with these bytes
-  // ("SCOTY" in hex). Explore only lists launches carrying this marker.
+  // ("SCOTY" in hex). Only launches carrying it are listed in Explore.
   launchTag: "0x53434f5459",
 
-  // The official $SCOTY token, featured at the top of Explore
+  // The official $SCOTY token, featured at the top of Explore ("" for none)
   officialToken: "",
 
-  // Token addresses hidden from Explore and Profile (e.g. test launches).
-  // They still exist on-chain; this only keeps them off SCOTY's lists.
-  hiddenTokens: [
-    "0x1E1FAb33Cb083494003b40b0e84265cB62803aFb", // test launch
-    "0xb42f917eFfC056822F97f468fC3C87039E9C091c", // test launch
-    "0x0ded4ceab711ce02be7fe64f6a51bf4439fb6d44", // former official $SCOTY, removed from the site
-    "0x0848e100434540ad7ace1625f5e7576b3a92ada9", // former official $SCOTY, removed from the site
-  ],
+  // Token addresses hidden from Explore and Profile (e.g. test launches)
+  hiddenTokens: [],
 
-  // Pons V2 metadata caps (PonsV2LaunchDeployer, in bytes). Longer strings
-  // revert the launch with MetadataTooLong.
-  limits: { name: 64, symbol: 16, logo: 512, description: 2048, social: 256 },
+  // Supply every SCOTY launch mints (whole tokens). Montra allows 1e9 … 1e15.
+  supply: 1000000000,
+  // Montra's 'fees to holders' recipient
+  holdersRecipient: "0x0000000000000000000000000000000000000001",
 
-  // Custom errors Pons V2 contracts can revert with, so failures are readable
-  ponsErrors: [
-    "error AlreadyGraduated()",
-    "error CombinedFeeTooHigh()",
-    "error CreatorTaxTooHigh()",
-    "error CurveGraduated()",
-    "error CurveNotQuotable()",
-    "error ExemptionListTooLong()",
-    "error FeeTransferFailed()",
-    "error InsufficientInputAmount()",
-    "error InsufficientLiquidity()",
-    "error InsufficientOutputAmount()",
-    "error InvalidBasisPoints()",
-    "error InvalidBps()",
-    "error InvalidLaunchConfigId()",
-    "error InvalidLaunchEconomics()",
-    "error InvalidTokenParams()",
-    "error LaunchConfigDisabled()",
-    "error LaunchDependenciesNotWired()",
-    "error LaunchDeployerNotSet()",
-    "error LaunchEconomicsMismatch()",
-    "error LaunchFeeNotPaid()",
-    "error MetadataTooLong()",
-    "error MinimumOutputRequired()",
-    "error NativeValueMismatch()",
-    "error NotWhitelisted()",
-    "error PairTokenDecimalsMismatch()",
-    "error PairTokenNotApproved()",
-    "error SlippageExceeded()",
-    "error SupplyTooHigh()",
-    "error SupplyTooLow()",
-    "error TransferFailed()",
-    "error UnexpectedNativeValue()",
-    "error ReentrancyGuardReentrantCall()",
-  ],
-
-  // Pons V2 launch factory (subset used by SCOTY)
+  // Montra LaunchFactory
   factoryAbi: [
+    "function launch((string name, string symbol, string metadataURI, (string logo, string description, (string telegram, string twitter, string discord, string website, string extra) socials) profile, uint256 configId, uint256 supply, bytes32 salt, address[] feeRecipients, uint16[] feeShares, uint256 firstBuyAmount, uint256 firstBuyMinOut, (uint256 deadline, uint8 v, bytes32 r, bytes32 s) permit) p) payable returns (address token, bytes32 poolId)",
+    "function configCount() view returns (uint256)",
+    "function getConfig(uint256 id) view returns ((uint256 moduleSetId, address quote, uint256 baseSupply, int24 tickSpacing, int24 startTick, uint24 graduationTicks, uint24 lpLineTicks, uint24 totalFeePips, uint24 totalFeeMinPips, uint24 protocolFeePips, uint24 lpFeePips, uint24 earlyBuyFeeStartPips, uint32 earlyBuyFeeWindow, address liquidityPolicy, bool liquiditySealed, uint32 streamDuration, uint16 pushBountyBps, uint128 pushFloor, bool enabled, bool exists))",
+    "function launchEnabled() view returns (bool)",
     "function launchFee() view returns (uint256)",
-    "function maxCreatorTaxBps() view returns (uint256)",
-    "function getLaunchedToken(address token) view returns ((address token, address curve, address deployer, address creatorFeeRecipient, address pairToken, uint256 graduationThreshold, uint24 poolFee, int24 tickSpacing, uint16 creatorTaxBps, bool buybackEnabled, uint8 phase, uint256 sweptQuote, uint256 sweptTokens, uint256 sweptAt, bool exists))",
-    "function canLaunch(address launcher) view returns (bool)",
-    "function previewLaunchEconomics(uint256 launchConfigId, address pairToken) view returns (bytes32)",
-    "function launchToken((string name,string symbol,string logo,string description,(string twitter,string telegram,string discord,string website,string farcaster) socials,address creatorFeeRecipient,uint16 creatorTaxBps,bool buybackEnabled,bytes32 expectedEconomics,bytes32 salt) params, uint256 launchConfigId, address pairToken, address[] snipeTaxExemptions) payable returns (address token, address curve)",
+    "event TokenLaunched(address indexed token, address indexed creator, bytes32 indexed poolId, uint256 configId, address quote, bool quoteIsCurrency0, uint256 supply, int24 startTick, address feeRecipient, bool feeLocked, uint256 firstBuyIn, uint256 firstBuyOut)",
   ],
-
-  // Pons V2 bonding curve (one per token): used for the creator's initial buy
-  curveAbi: [
-    "function buy(uint256 quoteIn, uint256 minTokensOut, address recipient) payable returns (uint256 tokensOut)",
-    "function sell(uint256 tokensIn, uint256 minQuoteOut, address recipient) returns (uint256 quoteOut)",
-    "function getReserves() view returns (uint256 quoteReserve, uint256 tokenReserve)",
-    "function realQuoteReserve() view returns (uint256)",
-    "function graduationThreshold() view returns (uint256)",
-    "function sellableTokens() view returns (uint256)",
-    "function graduated() view returns (bool)",
-    "function feeBps() view returns (uint256)",
-    "function creatorTaxBps() view returns (uint256)",
-    "event CurveBuy(address indexed buyer, address indexed recipient, uint256 quoteIn, uint256 tokensOut, uint256 fee, uint256 tax)",
-    "event CurveSell(address indexed seller, address indexed recipient, uint256 tokensIn, uint256 quoteOut, uint256 fee, uint256 tax)",
+  lensAbi: [
+    "function seedPreview(address factory, uint256 configId, uint256 supply) view returns (int24 startTick, (int24 tickLower, int24 tickUpper, uint128 liquidity) seed)",
   ],
-
-  // Pons V2 launch token (ERC-20 + on-chain metadata)
+  // Montra LaunchRouter: quote and swap on any pool of the shared PoolManager
+  routerAbi: [
+    "function quoteExactIn((address currency0, address currency1, uint24 fee, int24 tickSpacing, address hooks) key, bool zeroForOne, uint128 amountIn) returns (uint256)",
+    "function swapExactIn(((address currency0, address currency1, uint24 fee, int24 tickSpacing, address hooks) key, bool zeroForOne, uint128 amountIn, uint128 minOut, address recipient, uint256 deadline) params) payable returns (uint256)",
+  ],
+  stateViewAbi: [
+    "function getSlot0(bytes32 poolId) view returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)",
+    "function getLiquidity(bytes32 poolId) view returns (uint128)",
+  ],
+  poolManagerAbi: [
+    "event Initialize(bytes32 indexed id, address indexed currency0, address indexed currency1, uint24 fee, int24 tickSpacing, address hooks, uint160 sqrtPriceX96, int24 tick)",
+    "event Swap(bytes32 indexed id, address indexed sender, int128 amount0, int128 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick, uint24 fee)",
+  ],
   tokenAbi: [
     "function name() view returns (string)",
     "function symbol() view returns (string)",
@@ -117,19 +90,20 @@ window.SCOTY_CONFIG = {
     "function balanceOf(address) view returns (uint256)",
     "function allowance(address owner, address spender) view returns (uint256)",
     "function approve(address spender, uint256 amount) returns (bool)",
-    "function getTokenInfo() view returns (address tokenDeployer, string tokenLogo, string tokenDescription, (string twitter, string telegram, string discord, string website, string farcaster) tokenSocials)",
+  ],
+  // Custom errors so reverts read as words
+  montraErrors: [
+    "error FirstBuySlippage(uint256 out, uint256 minOut)",
+    "error SupplyOutOfRange(uint256 supply)",
+    "error SupplyNotWholeCoins(uint256 supply)",
   ],
 
-  // Logo upload endpoint (Vercel function in /api/upload.js, stores to Vercel Blob)
-  uploadUrl: "/api/upload",
-  // SCOTY launches, scanned server-side and CDN-cached (Vercel function in /api/launches.js)
-  launchesUrl: "/api/launches",
+  // Token metadata limits we enforce before signing
+  limits: { name: 64, symbol: 16, description: 1000, social: 256 },
 
-  // Pons V2 fee escrow: creator fees accrue here per recipient wallet
-  feeEscrowAbi: [
-    "function balanceOf(address recipient) view returns (uint256)",
-    "function claim(uint256 amount) returns (uint256 claimed)",
-  ],
+  // Vercel functions
+  uploadUrl: "/api/upload",       // images and metadata JSON → Vercel Blob
+  launchesUrl: "/api/launches",   // SCOTY launch index (GET list, POST {tx} to register)
 
   // Wallets offered in the connect dialog when they are not installed
   wallets: [

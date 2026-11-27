@@ -1,5 +1,5 @@
 (function () {
-  const { CFG, W, Store, logoSVG, logoDataUri, imgSrc, esc, short } = window.SCOTY;
+  const { CFG, W, Store, logoSVG, logoDataUri, imgSrc, readProvider, esc, short } = window.SCOTY;
   const $ = (id) => document.getElementById(id);
   const state = { chain: CFG.chains[0], image: null, seed: "" };
 
@@ -30,7 +30,7 @@
     let symbol = core.length > 1 ? (core[0].slice(0, 3) + core[1].slice(0, 2)) : (core[0] || "SCOTY").slice(0, 5);
     symbol = symbol.toUpperCase().replace(/[^A-Z0-9]/g, "") || "SCOTY";
     const lines = [
-      `${name} is ${idea.replace(/^(a|an|the)\s+/i, "the ")}. Born on Robinhood Chain, owned by the community.`,
+      `${name} is ${idea.replace(/^(a|an|the)\s+/i, "the ")}. Born on Elysium, owned by the community.`,
       `No team allocation, no presale — just ${name} and the people who believe in it.`,
     ];
     return { name, symbol, desc: lines.join(" ") };
@@ -102,10 +102,10 @@
   $("symbol").addEventListener("input", (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); renderLogo(); renderSummary(); });
   ["name", "desc"].forEach((id) => $(id).addEventListener("input", renderSummary));
   $("reroll").onclick = () => { $("logoUrl").value = ""; state.seed = Math.random().toString(36); renderLogo(); };
-  // a hosted logo link (https:// or ipfs://), validated against Pons' 512-byte cap
+  // a hosted logo link (https:// or ipfs://)
   function logoLink() {
     const v = $("logoUrl").value.trim();
-    return /^(https:\/\/|ipfs:\/\/)\S+$/i.test(v) && byteLen(v) <= CFG.limits.logo ? v : "";
+    return /^(https:\/\/|ipfs:\/\/)\S+$/i.test(v) && v.length <= 512 ? v : "";
   }
   // Upload: crop to a square, resize to 512 px WebP, store via /api/upload, use the returned link
   function toSquareImage(file, size = 512) {
@@ -165,7 +165,7 @@
     const v = $("logoUrl").value.trim(), note = $("logoNote");
     if (!v) { note.className = "note"; note.textContent = state.mode === "manual" ? "Upload your logo or paste an image link (https:// or ipfs://)." : "Upload your own image, paste an image link, or keep the generated logo."; }
     else if (!/^(https:\/\/|ipfs:\/\/)/i.test(v)) { note.className = "note bad"; note.textContent = "Use a link that starts with https:// or ipfs://"; }
-    else if (byteLen(v) > CFG.limits.logo) { note.className = "note bad"; note.textContent = `That link is ${byteLen(v)} bytes; Pons allows ${CFG.limits.logo}.`; }
+    else if (v.length > 512) { note.className = "note bad"; note.textContent = "That link is too long."; }
     else { note.className = "note"; note.textContent = "Using your image link as the token logo."; }
     renderLogo();
   });
@@ -174,38 +174,58 @@
   function renderChains() {
     $("chains").innerHTML = CFG.chains.map((c) =>
       `<button type="button" class="chain ${c.key === state.chain.key ? "on" : ""}" data-k="${c.key}">
-        <b>${esc(c.name)}</b><small>chain ${c.chainId} · ${c.factory ? "live" : "demo"}</small></button>`).join("");
-    $("chains").querySelectorAll(".chain").forEach((b) => (b.onclick = () => {
-      state.chain = CFG.chains.find((c) => c.key === b.dataset.k);
-      renderChains(); renderSummary(); renderDemo();
-    }));
+        <b>${esc(c.name)}</b><small>chain ${c.chainId} · ${esc(CFG.protocol)}</small></button>`).join("");
   }
 
-  // ── Launch settings: initial buy + creator fee ─────────────
-  const fmtEth = (wei) => Number(ethers.formatEther(wei)).toLocaleString("en-US", { maximumFractionDigits: 6 });
-  const fmtTokens = (wei) => Number(ethers.formatUnits(wei, 18)).toLocaleString("en-US", { maximumFractionDigits: 0 });
-  const fmtPct = (bps) => (bps / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }) + "%";
+  // Montra launch configs: each is a pair + fee + anti-snipe window. SCOTY launches HYPE pairs.
+  const ZERO = "0x0000000000000000000000000000000000000000";
+  const WINDOW_LABEL = (s) => (!s ? "None" : s < 60 ? s + "s" : s / 60 + "m");
+  state.fee = 2; state.window = 0; state.feeTo = "creator"; state.configs = null;
+
+  async function loadConfigs(provider) {
+    const f = new ethers.Contract(state.chain.factory, CFG.factoryAbi, provider);
+    const n = Number(await f.configCount());
+    const ids = Array.from({ length: n }, (_, i) => i);
+    const out = [];
+    for (let i = 0; i < ids.length; i += 50) {
+      const part = await Promise.all(ids.slice(i, i + 50).map((id) => f.getConfig(id).then((c) => ({ id, c })).catch(() => null)));
+      for (const x of part) {
+        if (!x || !x.c.exists || !x.c.enabled || x.c.quote.toLowerCase() !== ZERO) continue;
+        out.push({ id: x.id, fee: Number(x.c.totalFeePips) / 10000, window: Number(x.c.earlyBuyFeeStartPips) > 0 ? Number(x.c.earlyBuyFeeWindow) : 0 });
+      }
+    }
+    return out;
+  }
+  function renderChoices() {
+    const cs = state.configs;
+    const fees = cs ? [...new Set(cs.map((c) => c.fee))].sort((a, b) => a - b) : [1, 2, 3, 5, 10];
+    if (!fees.includes(state.fee)) state.fee = fees.includes(2) ? 2 : fees[0];
+    const windows = cs ? [...new Set(cs.filter((c) => c.fee === state.fee).map((c) => c.window))].sort((a, b) => a - b) : [0, 5, 10, 30, 60, 300, 900, 1800];
+    if (!windows.includes(state.window)) state.window = windows[0] || 0;
+    $("feeChips").innerHTML = fees.map((f) => `<button type="button" data-v="${f}" class="${f === state.fee ? "on" : ""}">${f}%</button>`).join("");
+    $("snipeChips").innerHTML = windows.map((w) => `<button type="button" data-v="${w}" class="${w === state.window ? "on" : ""}">${WINDOW_LABEL(w)}</button>`).join("");
+    $("feeVal").textContent = state.fee + "%";
+    $("snipeVal").textContent = WINDOW_LABEL(state.window);
+    $("feeChips").querySelectorAll("button").forEach((b) => (b.onclick = () => { state.fee = Number(b.dataset.v); renderChoices(); renderSummary(); }));
+    $("snipeChips").querySelectorAll("button").forEach((b) => (b.onclick = () => { state.window = Number(b.dataset.v); renderChoices(); renderSummary(); }));
+  }
+  $("feeToChips").querySelectorAll("button").forEach((b) => (b.onclick = () => {
+    state.feeTo = b.dataset.v;
+    $("feeToChips").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    $("feeToNote").textContent = state.feeTo === "holders"
+      ? "Your side of every trading fee is streamed to the coin's holders."
+      : "Your side of every trading fee is paid to your wallet.";
+    renderSummary();
+  }));
+  const pickConfig = () => state.configs && state.configs.find((c) => c.fee === state.fee && c.window === state.window);
+
+  // ── Initial buy ────────────────────────────────────────────
+  const fmtAmt = (wei) => Number(ethers.formatEther(wei)).toLocaleString("en-US", { maximumFractionDigits: 6 });
   function devBuyWei() {
     const v = $("devBuy").value.trim();
     if (!v || !window.ethers) return 0n;
     try { const w = ethers.parseEther(v); return w > 0n ? w : 0n; } catch (_) { return 0n; }
   }
-  const taxBps = () => Number($("tax").value) || 0;
-  function setMaxTax(max) {
-    const r = $("tax");
-    r.max = String(max);
-    r.step = max >= 100 ? "5" : "1";
-    if (Number(r.value) > max) r.value = String(max);
-    $("taxMax").textContent = fmtPct(max);
-    syncTax();
-  }
-  function syncTax() {
-    const r = $("tax");
-    $("taxVal").textContent = fmtPct(taxBps());
-    r.style.setProperty("--fill", (Number(r.value) / Math.max(1, Number(r.max))) * 100 + "%");
-    renderSummary();
-  }
-  $("tax").addEventListener("input", syncTax);
   $("devBuy").addEventListener("input", () => {
     const v = $("devBuy").value;
     $("buyChips").querySelectorAll("button").forEach((b) => b.classList.toggle("on", Number(b.dataset.v) === Number(v || 0)));
@@ -218,168 +238,180 @@
 
   // ── Step 04 ───────────────────────────────────────────────
   function renderSummary() {
+    const sym = state.chain.symbol;
+    const buy = devBuyWei();
     $("summary").innerHTML = `
       <div><span>Token      </span> ${esc($("name").value || "—")} ($${esc($("symbol").value || "—")})</div>
-      <div><span>Network    </span> ${esc(state.chain.name)}</div>
+      <div><span>Network    </span> ${esc(state.chain.name)} · ${esc(CFG.protocol)}</div>
       <div><span>Creator    </span> ${W.address ? short(W.address) : "connect wallet"}</div>
-      <div><span>Launch fee </span> ${state.feeWei == null ? "—" : fmtEth(state.feeWei) + " " + state.chain.symbol}</div>
-      <div><span>Initial buy</span> ${devBuyWei() > 0n ? fmtEth(devBuyWei()) + " " + state.chain.symbol : "none"}</div>
-      <div><span>Creator fee</span> ${fmtPct(taxBps())} per trade</div>
-      <div><span>Total      </span> ${state.feeWei == null ? "—" : fmtEth(state.feeWei + devBuyWei()) + " " + state.chain.symbol} + gas</div>`;
+      <div><span>Supply     </span> ${CFG.supply.toLocaleString("en-US")}</div>
+      <div><span>Trading fee</span> ${state.fee}% · anti-snipe ${WINDOW_LABEL(state.window)} · to ${state.feeTo === "holders" ? "holders" : "you"}</div>
+      <div><span>Initial buy</span> ${buy > 0n ? fmtAmt(buy) + " " + sym : "none"}</div>
+      <div><span>Launch fee </span> ${state.feeWei == null ? "—" : fmtAmt(state.feeWei) + " " + sym}</div>
+      <div><span>Total      </span> ${state.feeWei == null ? "—" : fmtAmt(state.feeWei + buy) + " " + sym} + gas</div>`;
     $("deploy").textContent = W.address ? "🚀 Launch token" : "Connect wallet to launch";
   }
-  function renderDemo() {
-    $("demoNote").innerHTML = state.chain.factory
-      ? ""
-      : `<span class="demo">DEMO MODE — no launch contract configured for ${esc(state.chain.name)}; launches are simulated locally</span>`;
-  }
-  W.onChange(() => { renderSummary(); if (state.feeWei == null) loadFee(); });
+  function renderDemo() { $("demoNote").innerHTML = ""; }
 
   const setStatus = (msg, cls = "") => { const s = $("status"); s.className = "status " + cls; s.innerHTML = msg; };
 
-  // read-only factory (public RPC) for fee display
-  async function loadFee() {
-    const chain = state.chain;
-    if (!chain.factory || !window.ethers) return;
-    try {
-      // public RPC first, then the connected wallet (if it is on this network)
-      const providers = [new ethers.JsonRpcProvider(chain.rpc, chain.chainId, { staticNetwork: true })];
-      if (W.provider && W.chainId === chain.chainId) providers.unshift(new ethers.BrowserProvider(W.provider));
-      let fee = null, maxTax = null;
-      for (const rp of providers) {
-        try {
-          const f = new ethers.Contract(chain.factory, CFG.factoryAbi, rp);
-          [fee, maxTax] = await Promise.all([f.launchFee(), f.maxCreatorTaxBps().catch(() => null)]);
-          break;
-        } catch (_) {}
-      }
-      if (fee == null) return;
-      state.feeWei = fee;
-      if (maxTax != null) setMaxTax(Number(maxTax));
-      renderSummary();
-    } catch (_) {}
+  // Montra's live configs and launch fee, read from the public RPC (or the wallet)
+  async function loadMontra() {
+    if (!window.ethers) return;
+    const providers = [];
+    if (W.provider && W.chainId === state.chain.chainId) providers.push(new ethers.BrowserProvider(W.provider));
+    providers.push(readProvider(state.chain));
+    for (const p of providers) {
+      try {
+        const f = new ethers.Contract(state.chain.factory, CFG.factoryAbi, p);
+        const [fee, configs] = await Promise.all([f.launchFee(), loadConfigs(p)]);
+        state.feeWei = fee;
+        if (configs.length) state.configs = configs;
+        renderChoices(); renderSummary();
+        return;
+      } catch (e) { console.warn("Montra read failed", e); }
+    }
   }
+  W.onChange(() => { renderSummary(); if (state.feeWei == null || !state.configs) loadMontra(); });
 
   const byteLen = (s) => new TextEncoder().encode(s).length;
-  // Pons rejects metadata over its byte caps (MetadataTooLong); check before signing
   function metadataProblem(m) {
     const L = CFG.limits;
-    if (byteLen(m.name) > L.name) return `Name is too long (max ${L.name} bytes).`;
+    if (byteLen(m.name) > L.name) return `Name is too long (max ${L.name} characters).`;
     if (byteLen(m.symbol) > L.symbol) return `Ticker is too long (max ${L.symbol} characters).`;
-    if (byteLen(m.logo) > L.logo) return `Logo is too large for Pons (max ${L.logo} bytes). Use an https:// or ipfs:// image link.`;
-    if (byteLen(m.description) > L.description) return `Description is too long (max ${L.description} bytes).`;
-    for (const [k, v] of Object.entries(m.socials)) if (byteLen(v) > L.social) return `${k} link is too long (max ${L.social} bytes).`;
+    if (byteLen(m.description) > L.description) return `Description is too long (max ${L.description} characters).`;
+    for (const [k, v] of Object.entries(m.socials)) if (byteLen(v) > L.social) return `${k} link is too long.`;
+    for (const [k, v] of Object.entries(m.socials)) if (v && !/^https:\/\//i.test(v)) return `${k === "twitter" ? "X" : k} link must start with https://`;
     return "";
   }
-  // readable messages for Pons custom errors
-  const PONS_MSG = {
-    MetadataTooLong: "Name, ticker, logo link or description is longer than Pons allows.",
-    InvalidTokenParams: "Pons rejected the token details. Check the name and ticker.",
-    CreatorTaxTooHigh: "Creator fee is above the Pons maximum.",
-    LaunchFeeNotPaid: "The launch fee changed. Please try again.",
-    LaunchEconomicsMismatch: "Pons launch terms just changed. Please try again.",
-    NotWhitelisted: "Launching is currently paused on Pons.",
-    LaunchConfigDisabled: "This Pons launch configuration is closed.",
-    ExemptionListTooLong: "Too many anti-snipe exemptions.",
-    SlippageExceeded: "Price moved too much during your initial buy.",
-  };
   function launchError(e) {
     if (e.code === "ACTION_REJECTED" || e.code === 4001) return "You rejected the transaction.";
+    if (/insufficient funds/i.test(e.message || "")) return `Not enough ${state.chain.symbol} for the launch plus gas.`;
     const name = e.revert && e.revert.name;
-    if (name) return PONS_MSG[name] || `Pons reverted with ${name}.`;
-    const data = e.data || (e.info && e.info.error && e.info.error.data);
-    const sel = typeof data === "string" && data.length >= 10 ? ` (error ${data.slice(0, 10)})` : "";
-    return (e.shortMessage || e.reason || e.message || String(e)) + sel;
+    if (name === "FirstBuySlippage") return "The price moved before your initial buy. Please try again.";
+    if (name === "SupplyOutOfRange" || name === "SupplyNotWholeCoins") return "Montra rejected the token supply.";
+    if (name) return `Montra reverted with ${name}.`;
+    return e.shortMessage || e.reason || e.message || String(e);
   }
 
-  const ZERO = "0x0000000000000000000000000000000000000000";
-  const TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
-  const ZERO_TOPIC = "0x" + "0".repeat(64);
+  // Upload helpers: the generated logo as a PNG, and the token metadata JSON
+  function svgToPng(svgUri, size = 512) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement("canvas"); c.width = c.height = size;
+        c.getContext("2d").drawImage(img, 0, 0, size, size);
+        c.toBlob((b) => (b ? resolve(b) : reject(new Error("render failed"))), "image/png");
+      };
+      img.onerror = () => reject(new Error("render failed"));
+      img.src = svgUri;
+    });
+  }
+  async function uploadBody(body, type) {
+    const r = await fetch(CFG.uploadUrl, { method: "POST", headers: { "content-type": type }, body });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.url) throw new Error(d.error || "upload failed");
+    return d.url;
+  }
+  // Tell SCOTY's index about the launch (it verifies the transaction on-chain)
+  async function registerLaunch(tx) {
+    for (let i = 0; i < 4; i++) {
+      try {
+        const r = await fetch(CFG.launchesUrl, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tx }) });
+        if (r.ok) return true;
+        if (r.status === 400) return false;
+      } catch (_) {}
+      await new Promise((res) => setTimeout(res, 2000 * (i + 1)));
+    }
+    return false;
+  }
 
   $("deploy").onclick = async () => {
     const name = $("name").value.trim(), symbol = $("symbol").value.trim(), desc = $("desc").value.trim();
     if (!name || !symbol) return setStatus("Name and ticker are required.", "err");
     if (!W.address && !(await W.connect())) return;
     const btn = $("deploy");
-    btn.disabled = true;
     const chain = state.chain;
-    if ($("logoUrl").value.trim() && !logoLink()) { btn.disabled = false; return setStatus("Logo link must start with https:// or ipfs:// and be at most 512 bytes.", "err"); }
-    if (state.mode === "manual" && !logoLink()) { btn.disabled = false; $("logoReq").hidden = false; return setStatus("Upload your logo (or paste an image link) before launching.", "err"); }
-    const logo = logoLink() || logoDataUri(state.seed, symbol);
-    const socials = { twitter: $("x").value.trim(), telegram: "", discord: "", website: $("web").value.trim(), farcaster: "" };
-    const problem = metadataProblem({ name, symbol, logo, description: desc, socials });
-    if (problem) { btn.disabled = false; return setStatus(problem, "err"); }
+    if ($("logoUrl").value.trim() && !logoLink()) return setStatus("Logo link must start with https:// or ipfs://", "err");
+    if (state.mode === "manual" && !logoLink()) { $("logoReq").hidden = false; return setStatus("Upload your logo (or paste an image link) before launching.", "err"); }
+    const socials = { telegram: "", twitter: $("x").value.trim(), discord: "", website: $("web").value.trim(), extra: "" };
+    const problem = metadataProblem({ name, symbol, description: desc, socials });
+    if (problem) return setStatus(problem, "err");
+    btn.disabled = true;
 
     try {
-      let address, curve = null, tx = null, boughtNote = "";
-      if (chain.factory && window.ethers) {
-        if (W.chainId !== chain.chainId) { setStatus("Switching to " + esc(chain.name) + "…"); await W.switchChain(chain); }
-        const provider = new ethers.BrowserProvider(W.provider);
-        const signer = await provider.getSigner();
-        const factory = new ethers.Contract(chain.factory, [...CFG.factoryAbi, ...CFG.ponsErrors], signer);
+      if (W.chainId !== chain.chainId) { setStatus("Switching to " + esc(chain.name) + "…"); await W.switchChain(chain); }
+      const provider = new ethers.BrowserProvider(W.provider);
+      const signer = await provider.getSigner();
+      const factory = new ethers.Contract(chain.factory, [...CFG.factoryAbi, ...CFG.montraErrors], signer);
 
-        setStatus("Preparing launch…");
-        const devWei = devBuyWei();
-        const bps = taxBps();
-        const [fee, canLaunch, economics, maxTax, balance] = await Promise.all([
-          factory.launchFee(),
-          factory.canLaunch(W.address),
-          factory.previewLaunchEconomics(chain.launchConfigId, ZERO),
-          factory.maxCreatorTaxBps(),
-          provider.getBalance(W.address),
-        ]);
-        if (!canLaunch) throw new Error("Launching is currently disabled for this wallet.");
-        if (BigInt(bps) > maxTax) throw new Error(`Creator fee can be at most ${fmtPct(Number(maxTax))}.`);
-        if (balance < fee + devWei) throw new Error(`Not enough ${chain.symbol}: you need ${fmtEth(fee + devWei)} ${chain.symbol} plus gas.`);
+      setStatus("Preparing launch…");
+      const [enabled, fee, balance] = await Promise.all([factory.launchEnabled(), factory.launchFee(), provider.getBalance(W.address)]);
+      if (!enabled) throw new Error("Montra has launches switched off right now.");
+      if (!state.configs) { state.configs = await loadConfigs(provider); renderChoices(); }
+      const cfg = pickConfig();
+      if (!cfg) throw new Error(`Montra has no ${state.fee}% config with a ${WINDOW_LABEL(state.window)} anti-snipe window. Pick another.`);
+      const buy = devBuyWei();
+      if (balance < fee + buy) throw new Error(`Not enough ${chain.symbol}: you need ${fmtAmt(fee + buy)} ${chain.symbol} plus gas.`);
 
-        const params = {
-          name, symbol, logo, description: desc, socials,
-          creatorFeeRecipient: W.address,
-          creatorTaxBps: bps,
-          buybackEnabled: false,
-          expectedEconomics: economics,
-          salt: ethers.concat([CFG.launchTag, ethers.randomBytes(32 - ethers.getBytes(CFG.launchTag).length)]), // SCOTY marker + random
-        };
-        // the creator's own wallet skips the opening anti-snipe tax for the initial buy
-        const args = [params, chain.launchConfigId, ZERO, devWei > 0n ? [W.address] : []];
-        // simulate first: catches reverts and returns the new token address
-        [address, curve] = await factory.launchToken.staticCall(...args, { value: fee });
-
-        setStatus("Confirm the transaction in your wallet…");
-        const sent = await factory.launchToken(...args, { value: fee });
-        tx = sent.hash;
-        setStatus(`Waiting for confirmation… <a href="${chain.explorer}/tx/${tx}" target="_blank" rel="noopener">view tx ↗</a>`);
-        const rc = await sent.wait();
-        if (rc.status !== 1) throw new Error("Transaction reverted.");
-        // the new token mints its supply to its curve: read both from the receipt
-        const mint = rc.logs.find((l) => l.topics[0] === TRANSFER && l.topics[1] === ZERO_TOPIC && l.topics.length === 3);
-        if (mint) { address = ethers.getAddress(mint.address); curve = ethers.getAddress("0x" + mint.topics[2].slice(26)); }
-
-        if (devWei > 0n && curve) {
-          try {
-            const c = new ethers.Contract(curve, [...CFG.curveAbi, ...CFG.ponsErrors], signer);
-            const est = await c.buy.staticCall(devWei, 0, W.address, { value: devWei });
-            const minOut = (est * 95n) / 100n; // 5% slippage guard
-            setStatus(`$${esc(symbol)} is live! Confirm your initial buy of ${fmtEth(devWei)} ${chain.symbol}…`);
-            const b = await c.buy(devWei, minOut, W.address, { value: devWei });
-            setStatus(`Buying your supply… <a href="${chain.explorer}/tx/${b.hash}" target="_blank" rel="noopener">view tx ↗</a>`);
-            const brc = await b.wait();
-            if (brc.status !== 1) throw new Error("buy reverted");
-            boughtNote = ` You bought ${fmtTokens(est)} $${esc(symbol)}.`;
-          } catch (be) {
-            console.error(be);
-            boughtNote = ` The initial buy didn't go through (${esc(be.code === "ACTION_REJECTED" ? "rejected" : be.shortMessage || be.message)}).`;
-          }
-        }
-      } else {
-        setStatus("Simulating launch (demo mode)…");
-        await new Promise((r) => setTimeout(r, 1200));
-        address = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(20)), (b) => b.toString(16).padStart(2, "0")).join("");
+      // logo + metadata, hosted so Montra and explorers can show them
+      setStatus("Uploading logo and metadata…");
+      let logo = logoLink();
+      if (!logo) {
+        const svg = logoDataUri(state.seed, symbol);
+        logo = await svgToPng(svg).then((png) => uploadBody(png, "image/png")).catch(() => svg);
       }
+      const meta = { name, symbol, description: desc, image: /^https:|^ipfs:/.test(logo) ? logo : undefined, twitter: socials.twitter || undefined, website: socials.website || undefined, createdOn: "https://scoty.fun" };
+      const metadataURI = await uploadBody(JSON.stringify(meta), "application/json").catch(() => "");
+
+      const p = {
+        name, symbol, metadataURI,
+        profile: { logo, description: desc, socials },
+        configId: BigInt(cfg.id),
+        supply: BigInt(CFG.supply) * 10n ** 18n,
+        salt: ethers.hexlify(ethers.concat([CFG.launchTag, ethers.randomBytes(32 - ethers.getBytes(CFG.launchTag).length)])), // SCOTY marker + random
+        feeRecipients: state.feeTo === "holders" ? [CFG.holdersRecipient] : [],
+        feeShares: state.feeTo === "holders" ? [10000] : [],
+        firstBuyAmount: buy, firstBuyMinOut: 0n,
+        permit: { deadline: 0n, v: 0, r: ethers.ZeroHash, s: ethers.ZeroHash },
+      };
+      const value = fee + buy;
+
+      // initial buy: ask the chain for the exact output (it reverts FirstBuySlippage(out, min)
+      // when the minimum is impossible), then allow 1% like Montra's own site
+      let expectedOut = 0n;
+      if (buy > 0n) {
+        try {
+          await factory.launch.staticCall({ ...p, firstBuyMinOut: 2n ** 255n }, { value });
+        } catch (e) {
+          if (e.revert && e.revert.name === "FirstBuySlippage") expectedOut = e.revert.args[0];
+          else throw e;
+        }
+        if (expectedOut === 0n) throw new Error("Couldn't price your initial buy. Please try again.");
+        p.firstBuyMinOut = (expectedOut * 99n) / 100n;
+      }
+
+      await factory.launch.staticCall(p, { value }); // catches any other revert before signing
+      setStatus("Confirm the launch in your wallet…");
+      const sent = await factory.launch(p, { value });
+      setStatus(`Launching… <a href="${chain.txUrl(sent.hash)}" target="_blank" rel="noopener">view tx ↗</a>`);
+      const rc = await sent.wait();
+      if (rc.status !== 1) throw new Error("Transaction reverted.");
+
+      let address = null, poolId = null;
+      for (const log of rc.logs) {
+        if (log.address.toLowerCase() !== chain.factory.toLowerCase()) continue;
+        try { const ev = factory.interface.parseLog(log); if (ev && ev.name === "TokenLaunched") { address = ethers.getAddress(ev.args.token); poolId = ev.args.poolId; } } catch (_) {}
+      }
+      if (!address) throw new Error("Launched, but the token address wasn't found in the receipt.");
+
+      setStatus("Adding your coin to Explore…");
+      await registerLaunch(sent.hash);
       Store.add({ name, symbol, description: desc, image: logo, twitter: socials.twitter, website: socials.website,
-        address, curve, tx, chain: chain.key, creator: W.address, createdAt: Date.now(), mcap: 0, change: 0, progress: 0, mine: true, demo: !chain.factory });
-      setStatus(`✅ $${esc(symbol)} is live${chain.factory ? "" : " (demo)"}!${boughtNote} Opening your token page…`, "ok");
-      setTimeout(() => (location.href = "token.html?address=" + address), boughtNote ? 3500 : 1500);
+        address, poolId, tx: sent.hash, chain: chain.key, creator: W.address, createdAt: Date.now(), mcap: 0, mine: true });
+      const bought = expectedOut > 0n ? ` You bought ${Number(ethers.formatUnits(expectedOut, 18)).toLocaleString("en-US", { maximumFractionDigits: 0 })} $${esc(symbol)}.` : "";
+      setStatus(`✅ $${esc(symbol)} is live on ${esc(CFG.protocol)}!${bought} Opening your token page…`, "ok");
+      setTimeout(() => (location.href = "token.html?address=" + address), bought ? 3000 : 1500);
     } catch (e) {
       console.error(e);
       setStatus("Launch failed: " + esc(launchError(e)), "err");
@@ -388,5 +420,5 @@
     }
   };
 
-  renderChains(); renderDemo(); syncTax(); loadFee();
+  renderChains(); renderDemo(); renderChoices(); renderSummary(); loadMontra();
 })();

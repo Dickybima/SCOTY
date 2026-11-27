@@ -1,162 +1,177 @@
-// Token page: live chart, market cap, holders, trades, and buy/sell on the Pons V2 curve.
+// Token page: live chart, market cap, trades, and buy/sell on the coin's Montra pool
+// (Uniswap v4 on Elysium, traded through Montra's LaunchRouter).
 (function () {
-  const { CFG, W, Feed, Store, logoSVG, tokenImg, isOfficialToken, OFFICIAL_LOGO, readProvider, esc, ago, short } = window.SCOTY;
+  const { CFG, W, Feed, Market, Store, logoSVG, tokenImg, isOfficialToken, OFFICIAL_LOGO, readProvider, esc, ago, short } = window.SCOTY;
   const $ = (id) => document.getElementById(id);
   const chain = CFG.chains[0];
-  const api = chain.explorerApi;
   const BPS = 10000n;
   const ZERO = "0x0000000000000000000000000000000000000000";
   const address = new URLSearchParams(location.search).get("address") || "";
 
   const S = {
-    curve: null, phase: 0, graduated: false, creator: null, symbol: "", name: "", decimals: 18, supply: 1e9,
-    q: 0n, t: 0n, sellable: 0n, raised: 0n, threshold: 0n, feeBps: 0n, taxBps: 0n,
-    ethUsd: 0, trades: [], myEth: null, myTok: null, side: "buy", busy: false,
+    launch: null, key: null, poolId: null, buyIsZeroForOne: true, symbol: "", name: "", decimals: 18, supply: CFG.supply,
+    priceHype: 0, usd: 0, feePct: null, window: 0, trades: [], lastBlock: 0,
+    myHype: null, myTok: null, side: "buy", busy: false, quote: null, quoteFor: "",
   };
 
   // ── formatting ─────────────────────────────────────────────
   const num = (x, d = 2) => x.toLocaleString("en-US", { maximumFractionDigits: d });
   function compact(x) {
     const a = Math.abs(x);
+    if (a >= 1e12) return num(x / 1e12, 2) + "T";
     if (a >= 1e9) return num(x / 1e9, 2) + "B";
     if (a >= 1e6) return num(x / 1e6, 2) + "M";
     if (a >= 1e3) return num(x / 1e3, 2) + "K";
     return num(x, a < 1 ? 4 : 2);
   }
-  function small(x) { // tiny prices: keep 3 significant digits
+  function small(x) {
     if (x === 0) return "0";
     if (x >= 1) return num(x, 4);
     const z = Math.max(0, Math.floor(-Math.log10(x)));
     return x.toFixed(Math.min(18, z + 3));
   }
   const usd = (x) => (x >= 1 ? "$" + compact(x) : "$" + small(x));
-  const eth = (x) => (x >= 0.0001 || x === 0 ? num(x, 6) : x.toExponential(2)) + " ETH";
+  const hype = (x) => (x >= 0.0001 || x === 0 ? num(x, 6) : x.toExponential(2)) + " HYPE";
   const f18 = (w) => Number(ethers.formatUnits(w, 18));
   const tokF = (w) => Number(ethers.formatUnits(w, S.decimals));
-  const priceEth = () => (S.t > 0n ? Number(S.q) / Number(S.t) : 0);
-  const mcapOf = (p) => (S.ethUsd ? p * S.supply * S.ethUsd : p * S.supply);
-  const fmtMcap = (p) => (S.ethUsd ? usd(mcapOf(p)) : eth(p * S.supply));
-
-  async function getJSON(url) { return Feed.getJSON(url); }
+  const mcapOf = (p) => (S.usd ? p * S.supply * S.usd : p * S.supply);
+  const fmtMcap = (p) => (S.usd ? usd(mcapOf(p)) : hype(p * S.supply));
+  const WINDOW_LABEL = (s) => (!s ? "no anti-snipe" : s < 60 ? s + "s anti-snipe" : s / 60 + "m anti-snipe");
 
   // ── load ───────────────────────────────────────────────────
+  async function findLaunch(rp) {
+    const lc = address.toLowerCase();
+    const pick = (list) => list && list.find((t) => t.address && t.address.toLowerCase() === lc && t.poolId);
+    let l = pick(Feed.cached());
+    if (!l) l = pick(await Feed.loadLaunches().catch(() => null));
+    if (l && l.key) return l;
+    const chainL = await Market.findLaunch(address, rp).catch((e) => { console.warn(e); return null; });
+    return chainL ? { ...(l || {}), ...chainL } : l || null;
+  }
+
   async function load() {
     if (!/^0x[0-9a-fA-F]{40}$/.test(address)) return fail("Token not found.");
     const rp = readProvider(chain);
-    const factory = new ethers.Contract(chain.factory, CFG.factoryAbi, rp);
     const token = new ethers.Contract(address, CFG.tokenAbi, rp);
-    let lt;
+    let supply;
     try {
-      [lt, S.name, S.symbol, S.decimals] = await Promise.all([
-        factory.getLaunchedToken(address), token.name(), token.symbol(), token.decimals().then(Number).catch(() => 18),
+      [S.name, S.symbol, S.decimals, supply] = await Promise.all([
+        token.name(), token.symbol(), token.decimals().then(Number).catch(() => 18), token.totalSupply(),
       ]);
     } catch (e) {
       console.warn(e);
-      const local = Store.all().find((t) => t.address && t.address.toLowerCase() === address.toLowerCase());
-      if (local && local.demo) return fail("This is a demo launch, so there is nothing to trade.");
-      return fail("Couldn't load this token from Robinhood Chain. Check your connection and refresh.");
+      return fail(`Couldn't load this token from ${chain.name}. Check your connection and refresh.`);
     }
-    if (!lt.exists) return fail("This token wasn't launched on Pons.");
-    S.curve = lt.curve;
-    S.phase = Number(lt.phase);
-    S.creator = lt.creatorFeeRecipient && lt.creatorFeeRecipient !== ZERO ? lt.creatorFeeRecipient : lt.deployer;
-    S.taxBps = BigInt(lt.creatorTaxBps);
-
-    const [info, supply] = await Promise.all([token.getTokenInfo().catch(() => null), token.totalSupply().catch(() => 10n ** 27n)]);
     S.supply = tokF(supply);
-    renderHead(info);
+    S.launch = await findLaunch(rp);
+    if (!S.launch || !S.launch.poolId) return fail(`This token wasn't launched on ${CFG.protocol}.`);
+    S.poolId = S.launch.poolId;
+    S.key = S.launch.key;
+    // native HYPE is currency0 in Montra's HYPE pools: buying the coin swaps 0 → 1
+    S.buyIsZeroForOne = S.launch.quoteIsCurrency0 !== false;
+
+    renderHead(S.launch);
     $("tkMsg").hidden = true;
     $("tk").hidden = false;
     document.title = `${S.name} ($${S.symbol}) — SCOTY`;
 
-    await Promise.all([refreshCurve(), refreshMeta(), refreshTrades(), refreshBalances()]);
-    setInterval(() => { refreshCurve().then(renderAll); refreshTrades(); }, 15000);
+    const f = new ethers.Contract(chain.factory, CFG.factoryAbi, rp);
+    f.getConfig(S.launch.configId).then((c) => {
+      S.feePct = Number(c.totalFeePips) / 10000;
+      S.window = Number(c.earlyBuyFeeStartPips) > 0 ? Number(c.earlyBuyFeeWindow) : 0;
+      renderStats();
+    }).catch(() => {});
+
+    await Promise.all([refreshPrice(), refreshTrades(), refreshBalances()]);
+    setInterval(() => { refreshPrice().then(renderAll); refreshTrades(); }, 15000);
   }
   function fail(msg) { $("tkMsg").textContent = msg; }
 
-  function renderHead(info) {
-    const logo = info && Feed.safeImg(info.tokenLogo);
+  function renderHead(l) {
+    const logo = l && Feed.safeImg(l.image);
     $("tkLogo").innerHTML = isOfficialToken(address) ? `<img src="${OFFICIAL_LOGO}" alt="">`
       : logo ? tokenImg(logo, { symbol: S.symbol, name: S.name }) : logoSVG(S.symbol + S.name, S.symbol);
     $("tkName").textContent = S.name;
     $("tkSym").textContent = "$" + S.symbol;
+    $("tkPhase").textContent = CFG.protocol;
     const links = [];
-    const soc = info && info.tokenSocials;
-    if (soc && /^https:\/\//.test(soc.twitter)) links.push(`<a class="btn btn-sm" href="${esc(soc.twitter)}" target="_blank" rel="noopener">X ↗</a>`);
-    if (soc && /^https:\/\//.test(soc.website)) links.push(`<a class="btn btn-sm" href="${esc(soc.website)}" target="_blank" rel="noopener">Website ↗</a>`);
+    if (l && /^https:\/\//.test(l.twitter || "")) links.push(`<a class="btn btn-sm" href="${esc(l.twitter)}" target="_blank" rel="noopener">X ↗</a>`);
+    if (l && /^https:\/\//.test(l.website || "")) links.push(`<a class="btn btn-sm" href="${esc(l.website)}" target="_blank" rel="noopener">Website ↗</a>`);
     links.push(`<button class="btn btn-sm" id="copyCa" type="button">Copy CA</button>`);
     $("tkLinks").innerHTML = links.join("");
     $("copyCa").onclick = (e) => { navigator.clipboard?.writeText(address); e.target.textContent = "Copied!"; setTimeout(() => (e.target.textContent = "Copy CA"), 1200); };
+    $("montraLink").href = chain.montraTokenUrl(address);
 
     $("about").hidden = false;
-    $("tkDesc").textContent = (info && info.tokenDescription) || "Launched on SCOTY.";
-    $("tkAddr").textContent = short(address); $("tkAddr").href = `${chain.explorer}/token/${address}`;
-    $("tkCreator").textContent = short(S.creator); $("tkCreator").href = "profile.html?address=" + S.creator;
-    $("tkCurve").textContent = short(S.curve); $("tkCurve").href = `${chain.explorer}/address/${S.curve}`;
+    $("tkDesc").textContent = (l && l.description) || `Launched on ${CFG.protocol}.`;
+    $("tkAddr").textContent = short(address); $("tkAddr").href = chain.tokenUrl(address);
+    $("tkCreator").textContent = l && l.creator ? short(l.creator) : "—";
+    if (l && l.creator) $("tkCreator").href = "profile.html?address=" + l.creator;
+    $("tkPool").textContent = S.poolId ? S.poolId.slice(0, 10) + "…" + S.poolId.slice(-6) : "—";
   }
 
-  async function refreshCurve() {
-    const c = new ethers.Contract(S.curve, CFG.curveAbi, readProvider(chain));
+  async function refreshPrice() {
     try {
-      const [res, sellable, raised, threshold, feeBps, taxBps, graduated] = await Promise.all([
-        c.getReserves(), c.sellableTokens(), c.realQuoteReserve(), c.graduationThreshold(),
-        c.feeBps(), c.creatorTaxBps().catch(() => S.taxBps), c.graduated().catch(() => false),
-      ]);
-      S.q = res[0]; S.t = res[1]; S.sellable = sellable; S.raised = raised; S.threshold = threshold;
-      S.feeBps = BigInt(feeBps); S.taxBps = BigInt(taxBps); S.graduated = graduated || S.phase > 0;
-    } catch (e) { console.warn("curve read failed", e); }
+      const sv = new ethers.Contract(chain.stateView, CFG.stateViewAbi, readProvider(chain));
+      const [s0, u] = await Promise.all([sv.getSlot0(S.poolId), Market.hypeUsd()]);
+      S.priceHype = Market.priceFromSqrt(s0.sqrtPriceX96, S.launch.quoteIsCurrency0);
+      S.usd = u;
+    } catch (e) { console.warn("price read failed", e); }
   }
 
-  async function refreshMeta() {
-    const [stats, tok] = await Promise.all([getJSON(`${api}/stats`).catch(() => ({})), getJSON(`${api}/tokens/${address}`).catch(() => ({}))]);
-    S.ethUsd = Number(stats.coin_price || 0);
-    S.holders = Number(tok.holders_count || tok.holders || 0);
-    renderAll();
-  }
-
-  // trades from the curve's CurveBuy / CurveSell events (Blockscout logs, newest first)
+  // trades: the PoolManager's Swap events for this pool, newest first
   async function refreshTrades() {
-    const iface = new ethers.Interface(CFG.curveAbi);
-    const out = [];
-    let params = "";
+    const rp = readProvider(chain);
+    const pm = new ethers.Interface(CFG.poolManagerAbi);
+    const topic = pm.getEvent("Swap").topicHash;
+    const latest = await rp.getBlockNumber().catch(() => 0);
+    if (!latest) return;
+    const start = S.lastBlock ? S.lastBlock + 1 : Number(S.launch.block || chain.factoryDeployBlock);
+    const logs = [];
+    const fetchRange = (from, to) => rp.getLogs({ address: chain.poolManager, topics: [topic, S.poolId], fromBlock: from, toBlock: to });
     try {
-      for (let page = 0; page < 8; page++) {
-        const data = await getJSON(`${api}/addresses/${S.curve}/logs${params}`);
-        for (const l of data.items || []) {
-          let ev;
-          try { ev = iface.parseLog({ topics: (l.topics || []).filter(Boolean), data: l.data }); } catch (_) { continue; }
-          if (!ev || (ev.name !== "CurveBuy" && ev.name !== "CurveSell")) continue;
-          const buy = ev.name === "CurveBuy";
-          const ethAmt = f18(buy ? ev.args.quoteIn : ev.args.quoteOut);
-          const tokAmt = tokF(buy ? ev.args.tokensOut : ev.args.tokensIn);
-          if (!(tokAmt > 0)) continue;
-          out.push({ buy, eth: ethAmt, tok: tokAmt, price: ethAmt / tokAmt, who: buy ? ev.args.recipient : ev.args.seller,
-            block: Number(l.block_number), idx: Number(l.index || 0), tx: l.transaction_hash || l.tx_hash });
-        }
-        if (!data.next_page_params) break;
-        params = "?" + new URLSearchParams(data.next_page_params).toString();
+      logs.push(...await fetchRange(start, latest));
+    } catch (_) {
+      // the RPC limits wide ranges: walk back in chunks from the newest block
+      let to = latest, size = 200000;
+      for (let i = 0; i < 60 && to >= start && logs.length < 300; i++) {
+        const from = Math.max(start, to - size + 1);
+        try { logs.push(...await fetchRange(from, to)); to = from - 1; }
+        catch (_) { if (size <= 2000) break; size = Math.floor(size / 4); }
       }
-    } catch (e) { console.warn("trades unavailable", e); }
-    out.sort((a, b) => b.block - a.block || b.idx - a.idx);
-    // timestamps for the newest trades
-    const blocks = [...new Set(out.slice(0, 40).map((t) => t.block))];
+    }
+    S.lastBlock = latest;
+    const fresh = [];
+    for (const l of logs) {
+      let ev;
+      try { ev = pm.parseLog(l); } catch (_) { continue; }
+      if (!ev) continue;
+      const a0 = ev.args.amount0, a1 = ev.args.amount1;
+      // amounts are the swapper's deltas: positive = received from the pool
+      const coinDelta = S.buyIsZeroForOne ? a1 : a0;
+      const hypeDelta = S.buyIsZeroForOne ? a0 : a1;
+      const buy = coinDelta > 0n;
+      const h = f18(hypeDelta < 0n ? -hypeDelta : hypeDelta);
+      const t = tokF(coinDelta < 0n ? -coinDelta : coinDelta);
+      if (!(t > 0)) continue;
+      fresh.push({ buy, eth: h, tok: t, price: h / t, block: l.blockNumber, idx: l.index ?? l.logIndex ?? 0, tx: l.transactionHash });
+    }
+    const seen = new Set(S.trades.map((t) => t.tx + ":" + t.idx));
+    S.trades = [...fresh.filter((t) => !seen.has(t.tx + ":" + t.idx)), ...S.trades].sort((a, b) => b.block - a.block || b.idx - a.idx);
+    const need = [...new Set(S.trades.slice(0, 40).filter((t) => !t.time).map((t) => t.block))];
     const times = {};
-    await Promise.all(blocks.map(async (n) => {
-      const b = await getJSON(`${api}/blocks/${n}`).catch(() => null);
-      if (b && b.timestamp) times[n] = Date.parse(b.timestamp);
-    }));
-    for (const t of out) t.time = times[t.block] || null;
-    S.trades = out;
+    await Promise.all(need.map(async (n) => { const b = await rp.getBlock(n).catch(() => null); if (b) times[n] = b.timestamp * 1000; }));
+    for (const t of S.trades) if (!t.time && times[t.block]) t.time = times[t.block];
     renderAll();
   }
 
   async function refreshBalances() {
-    if (!W.address) { S.myEth = S.myTok = null; renderTrade(); return; }
+    if (!W.address) { S.myHype = S.myTok = null; renderTrade(); return; }
     try {
       const rp = readProvider(chain);
       const token = new ethers.Contract(address, CFG.tokenAbi, rp);
-      [S.myEth, S.myTok] = await Promise.all([rp.getBalance(W.address), token.balanceOf(W.address)]);
-    } catch (_) { S.myEth = S.myTok = null; }
+      [S.myHype, S.myTok] = await Promise.all([rp.getBalance(W.address), token.balanceOf(W.address)]);
+    } catch (_) { S.myHype = S.myTok = null; }
     renderTrade();
   }
 
@@ -164,28 +179,20 @@
   function renderAll() { renderStats(); renderChart(); renderTrades(); renderTrade(); }
 
   function renderStats() {
-    const p = priceEth();
+    const p = S.priceHype;
     $("stMcap").textContent = p ? fmtMcap(p) : "—";
-    $("stMcapEth").textContent = p && S.ethUsd ? eth(p * S.supply) : "";
-    $("stPrice").textContent = p ? (S.ethUsd ? usd(p * S.ethUsd) : eth(p)) : "—";
-    $("stPriceEth").textContent = p && S.ethUsd ? small(p) + " ETH" : "";
-    $("stHolders").textContent = S.holders ? num(S.holders, 0) : "—";
-    $("stTax").textContent = (Number(S.taxBps) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }) + "%";
-    $("stFee").textContent = S.feeBps ? "+ " + Number(S.feeBps) / 100 + "% protocol" : "";
-    const pg = S.threshold > 0n ? Math.min(100, (Number(S.raised) / Number(S.threshold)) * 100) : 0;
-    $("pgPct").textContent = (S.graduated ? 100 : pg).toFixed(pg < 10 ? 2 : 1) + "%";
-    $("pgFill").style.width = (S.graduated ? 100 : pg) + "%";
-    $("pgNote").textContent = S.graduated
-      ? "Graduated: this token now trades in its Uniswap v4 pool with permanently locked liquidity."
-      : `${eth(f18(S.raised))} of ${eth(f18(S.threshold))} raised. When the curve fills, the token graduates into a Uniswap v4 pool with permanently locked liquidity.`;
-    $("tkPhase").textContent = S.graduated ? "Graduated" : "On curve";
-    $("tkPhase").classList.toggle("grad", S.graduated);
+    $("stMcapEth").textContent = p && S.usd ? hype(p * S.supply) : "";
+    $("stPrice").textContent = p ? (S.usd ? usd(p * S.usd) : hype(p)) : "—";
+    $("stPriceEth").textContent = p && S.usd ? small(p) + " HYPE" : "";
+    $("stSupply").textContent = compact(S.supply);
+    $("stTax").textContent = S.feePct == null ? "—" : S.feePct + "%";
+    $("stFee").textContent = S.feePct == null ? "" : WINDOW_LABEL(S.window);
   }
 
   let hoverIdx = null;
   function renderChart() {
     const pts = S.trades.slice().reverse().map((t) => ({ p: t.price, time: t.time }));
-    const now = priceEth();
+    const now = S.priceHype;
     if (now) pts.push({ p: now, time: Date.now(), live: true });
     const el = $("chart");
     if (pts.length < 2) {
@@ -211,10 +218,10 @@
         <line id="chX" x1="0" x2="0" y1="0" y2="${H0}" stroke="rgba(255,255,255,.25)" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" style="display:none"/>
       </svg>
       <div class="chart-dot" id="chDot" style="color:${col}"></div>
-      <div class="chart-y"><span>${S.ethUsd ? usd(hi) : eth(hi)}</span><span>${S.ethUsd ? usd(lo) : eth(lo)}</span></div>`;
+      <div class="chart-y"><span>${S.usd ? usd(hi) : hype(hi)}</span><span>${S.usd ? usd(lo) : hype(lo)}</span></div>`;
     const show = (i) => {
       const v = vals[i], pt = pts[i];
-      $("chVal").textContent = S.ethUsd ? usd(v) : eth(v);
+      $("chVal").textContent = S.usd ? usd(v) : hype(v);
       const d = ((v - vals[0]) / vals[0]) * 100;
       $("chDelta").textContent = (d >= 0 ? "▲ " : "▼ ") + Math.abs(d).toFixed(2) + "%";
       $("chDelta").className = "delta " + (d >= 0 ? "up" : "down");
@@ -240,13 +247,13 @@
   function renderTrades() {
     const el = $("txs");
     if (!S.trades.length) { el.innerHTML = '<div class="empty">No trades yet.</div>'; return; }
-    el.innerHTML = `<div class="txrow txhead"><span>Type</span><span>ETH</span><span>${esc(S.symbol)}</span><span>Wallet</span><span>Time</span></div>` +
+    el.innerHTML = `<div class="txrow txhead"><span>Type</span><span>HYPE</span><span>${esc(S.symbol)}</span><span>Tx</span><span>Time</span></div>` +
       S.trades.slice(0, 40).map((t) => `
-        <a class="txrow" href="${chain.explorer}/tx/${esc(t.tx)}" target="_blank" rel="noopener">
+        <a class="txrow" href="${chain.txUrl(t.tx)}" target="_blank" rel="noopener">
           <span class="${t.buy ? "buy" : "sell"}">${t.buy ? "Buy" : "Sell"}</span>
           <span class="mono">${num(t.eth, 5)}</span>
           <span class="mono">${compact(t.tok)}</span>
-          <span class="mono">${short(t.who)}</span>
+          <span class="mono">${short(t.tx)}</span>
           <span class="muted">${t.time ? ago(t.time) : "—"}</span>
         </a>`).join("");
   }
@@ -257,31 +264,32 @@
     if (!v || !(Number(v) > 0)) return 0n;
     try { return ethers.parseUnits(v, S.side === "buy" ? 18 : S.decimals); } catch (_) { return 0n; }
   }
-  function quote(inWei) {
-    if (inWei <= 0n || S.t === 0n) return null;
-    const fee = S.feeBps, tax = S.taxBps;
-    if (S.side === "buy") {
-      const net = inWei - (inWei * fee) / BPS - (inWei * tax) / BPS;
-      if (net <= 0n) return null;
-      let out = (net * S.t) / (S.q + net);
-      if (S.sellable > 0n && out > S.sellable) out = S.sellable;
-      const exec = Number(net) / Number(out), spot = Number(S.q) / Number(S.t);
-      return { out, outF: tokF(out), impact: exec / spot - 1, fees: f18(inWei - net) };
-    }
-    const gross = (inWei * S.q) / (S.t + inWei);
-    const net = (gross * (BPS - fee - tax)) / BPS;
-    const spotVal = Number(inWei) * (Number(S.q) / Number(S.t));
-    return { out: net, outF: f18(net), impact: 1 - Number(gross) / spotVal, fees: f18(gross - net) };
+  const zeroForOne = () => (S.side === "buy" ? S.buyIsZeroForOne : !S.buyIsZeroForOne);
+
+  // exact quote from Montra's router (it returns what swapExactIn would pay)
+  let quoteTimer = null;
+  function requestQuote() {
+    clearTimeout(quoteTimer);
+    const inWei = amountWei();
+    const tag = S.side + ":" + inWei;
+    if (inWei === 0n || !S.key) { S.quote = null; S.quoteFor = tag; return renderTrade(); }
+    quoteTimer = setTimeout(async () => {
+      try {
+        const r = new ethers.Contract(chain.router, CFG.routerAbi, readProvider(chain));
+        const out = await r.quoteExactIn.staticCall(S.key, zeroForOne(), inWei);
+        if (S.side + ":" + amountWei() === tag) { S.quote = out; S.quoteFor = tag; renderTrade(); }
+      } catch (e) { console.warn("quote failed", e); S.quote = null; S.quoteFor = tag; renderTrade(); }
+    }, 250);
   }
 
   function renderTrade() {
     const buy = S.side === "buy";
     $("seg").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.s === S.side));
     $("amtLbl").textContent = buy ? "You pay" : "You sell";
-    $("amtUnit").textContent = buy ? "ETH" : S.symbol || "TOKEN";
-    const bal = buy ? S.myEth : S.myTok;
-    $("balLbl").textContent = bal == null ? "" : "Balance: " + (buy ? num(f18(bal), 5) + " ETH" : compact(tokF(bal)) + " " + S.symbol);
-    const chips = buy ? ["0.01", "0.05", "0.1", "0.5"] : ["25%", "50%", "75%", "Max"];
+    $("amtUnit").textContent = buy ? "HYPE" : S.symbol || "TOKEN";
+    const bal = buy ? S.myHype : S.myTok;
+    $("balLbl").textContent = bal == null ? "" : "Balance: " + (buy ? num(f18(bal), 5) + " HYPE" : compact(tokF(bal)) + " " + S.symbol);
+    const chips = buy ? ["0.1", "0.5", "1", "5"] : ["25%", "50%", "75%", "Max"];
     const ck = chips.join();
     if ($("qChips").dataset.k !== ck) {
       $("qChips").dataset.k = ck;
@@ -293,42 +301,42 @@
           const pct = v === "Max" ? 100n : BigInt(parseInt(v));
           $("amt").value = ethers.formatUnits((S.myTok * pct) / 100n, S.decimals);
         } else $("amt").value = v;
-        renderTrade();
+        requestQuote();
       }));
     }
     const inWei = amountWei();
-    const q = quote(inWei);
-    $("qOut").textContent = q ? (buy ? compact(q.outF) + " " + S.symbol : eth(q.outF)) : "—";
-    $("qImpact").textContent = q ? (q.impact * 100).toFixed(2) + "%" : "—";
-    $("qImpact").className = q && q.impact > 0.05 ? "warn" : "";
-    $("qFees").textContent = q ? eth(q.fees) : "—";
+    const fresh = S.quoteFor === S.side + ":" + inWei;
+    const q = fresh ? S.quote : null;
+    let outF = null, impact = null;
+    if (q != null && inWei > 0n) {
+      outF = buy ? tokF(q) : f18(q);
+      const inF = buy ? f18(inWei) : tokF(inWei);
+      if (S.priceHype) impact = buy ? (inF / outF) / S.priceHype - 1 : 1 - (outF / inF) / S.priceHype;
+    }
+    $("qOut").textContent = inWei === 0n ? "—" : !fresh ? "…" : outF == null ? "—" : buy ? compact(outF) + " " + S.symbol : hype(outF);
+    $("qImpact").textContent = impact == null ? "—" : (Math.max(0, impact) * 100).toFixed(2) + "%";
+    $("qImpact").className = impact != null && impact > 0.05 ? "warn" : "";
+    $("qFees").textContent = S.feePct == null ? "—" : S.feePct + "% Montra fee";
 
     const btn = $("tradeBtn");
     btn.classList.toggle("sellbtn", !buy);
     let label, disabled = false;
-    if (S.graduated) { label = "Graduated — trade on Uniswap v4"; disabled = true; }
+    if (!S.key) { label = "Pool not found"; disabled = true; }
     else if (!W.address) label = "Connect wallet";
     else if (W.chainId !== chain.chainId) label = "Switch to " + chain.name;
     else if (inWei === 0n) { label = "Enter an amount"; disabled = true; }
     else if (bal != null && inWei > bal) { label = "Insufficient balance"; disabled = true; }
+    else if (!fresh || q == null) { label = fresh ? "No quote" : "Getting quote…"; disabled = true; }
     else label = (buy ? "Buy $" : "Sell $") + S.symbol;
     btn.textContent = S.busy ? "Confirm in wallet…" : label;
     btn.disabled = disabled || S.busy;
   }
 
   const setStatus = (m, c = "") => { const s = $("tradeStatus"); s.className = "status " + c; s.innerHTML = m; };
-  const MSG = {
-    SlippageExceeded: "Price moved past your slippage limit. Try again or raise slippage.",
-    CurveGraduated: "This token has graduated. Trade it on Uniswap v4.",
-    NativeValueMismatch: "ETH sent did not match the amount. Try again.",
-    InsufficientOutputAmount: "Amount too small.",
-    InsufficientLiquidity: "Not enough liquidity on the curve for that trade.",
-  };
   function tradeError(e) {
     if (e.code === "ACTION_REJECTED" || e.code === 4001) return "You rejected the transaction.";
-    const n = e.revert && e.revert.name;
-    if (n) return MSG[n] || "Pons reverted with " + n + ".";
-    if (/insufficient funds/i.test(e.message || "")) return "Not enough ETH for the amount plus gas.";
+    if (/insufficient funds/i.test(e.message || "")) return "Not enough HYPE for the amount plus gas.";
+    if (/slippage|minOut|too little|INSUFFICIENT_OUTPUT/i.test((e.shortMessage || "") + (e.reason || "") + (e.message || ""))) return "Price moved past your slippage limit. Try again or raise slippage.";
     return e.shortMessage || e.reason || e.message || String(e);
   }
 
@@ -336,31 +344,30 @@
     if (!W.address) return W.connect();
     if (W.chainId !== chain.chainId) { await W.switchChain(chain).catch(() => {}); return renderTrade(); }
     const inWei = amountWei();
-    if (inWei === 0n) return;
+    if (inWei === 0n || !S.key) return;
     const slip = BigInt($("slip").value);
     S.busy = true; renderTrade(); setStatus("");
     try {
       const signer = await new ethers.BrowserProvider(W.provider).getSigner();
-      const c = new ethers.Contract(S.curve, [...CFG.curveAbi, ...CFG.ponsErrors], signer);
-      let tx;
-      if (S.side === "buy") {
-        const est = await c.buy.staticCall(inWei, 0, W.address, { value: inWei });
-        tx = await c.buy(inWei, (est * (BPS - slip)) / BPS, W.address, { value: inWei });
-      } else {
+      const router = new ethers.Contract(chain.router, CFG.routerAbi, signer);
+      const buy = S.side === "buy";
+      if (!buy) {
         const tk = new ethers.Contract(address, CFG.tokenAbi, signer);
-        if ((await tk.allowance(W.address, S.curve)) < inWei) {
-          setStatus(`One-time approval so the curve can take your $${esc(S.symbol)} when you sell…`);
-          await (await tk.approve(S.curve, ethers.MaxUint256)).wait();
+        if ((await tk.allowance(W.address, chain.router)) < inWei) {
+          setStatus(`One-time approval so Montra's router can sell your $${esc(S.symbol)}…`);
+          await (await tk.approve(chain.router, ethers.MaxUint256)).wait();
         }
-        const est = await c.sell.staticCall(inWei, 0, W.address);
-        tx = await c.sell(inWei, (est * (BPS - slip)) / BPS, W.address);
       }
-      setStatus(`Waiting for confirmation… <a href="${chain.explorer}/tx/${tx.hash}" target="_blank" rel="noopener">view tx ↗</a>`);
+      const est = await router.quoteExactIn.staticCall(S.key, zeroForOne(), inWei);
+      const params = { key: S.key, zeroForOne: zeroForOne(), amountIn: inWei, minOut: (est * (BPS - slip)) / BPS,
+        recipient: W.address, deadline: BigInt(Math.floor(Date.now() / 1000) + 600) };
+      const tx = await router.swapExactIn(params, { value: buy ? inWei : 0n });
+      setStatus(`Waiting for confirmation… <a href="${chain.txUrl(tx.hash)}" target="_blank" rel="noopener">view tx ↗</a>`);
       const rc = await tx.wait();
       if (rc.status !== 1) throw new Error("Transaction reverted.");
-      setStatus(`✅ ${S.side === "buy" ? "Bought" : "Sold"} $${esc(S.symbol)}. <a href="${chain.explorer}/tx/${tx.hash}" target="_blank" rel="noopener">view tx ↗</a>`, "ok");
-      $("amt").value = "";
-      await Promise.all([refreshCurve(), refreshBalances()]);
+      setStatus(`✅ ${buy ? "Bought" : "Sold"} $${esc(S.symbol)}. <a href="${chain.txUrl(tx.hash)}" target="_blank" rel="noopener">view tx ↗</a>`, "ok");
+      $("amt").value = ""; S.quote = null;
+      await Promise.all([refreshPrice(), refreshBalances()]);
       refreshTrades();
     } catch (e) {
       console.error(e);
@@ -370,8 +377,8 @@
     }
   }
 
-  $("seg").querySelectorAll("button").forEach((b) => (b.onclick = () => { S.side = b.dataset.s; $("amt").value = ""; setStatus(""); renderTrade(); }));
-  $("amt").addEventListener("input", renderTrade);
+  $("seg").querySelectorAll("button").forEach((b) => (b.onclick = () => { S.side = b.dataset.s; $("amt").value = ""; S.quote = null; setStatus(""); renderTrade(); }));
+  $("amt").addEventListener("input", requestQuote);
   $("slip").addEventListener("change", renderTrade);
   $("tradeBtn").onclick = trade;
   W.onChange(() => { refreshBalances(); });

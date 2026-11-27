@@ -1,5 +1,5 @@
 (function () {
-  const { CFG, W, Feed, logoHTML, tokenUrl, readProvider, imgSrc, esc, fmtUsd, ago, short } = window.SCOTY;
+  const { CFG, W, Feed, Market, logoHTML, tokenUrl, readProvider, imgSrc, esc, fmtUsd, ago, short } = window.SCOTY;
   const $ = (id) => document.getElementById(id);
   const chain = CFG.chains[0];
 
@@ -33,7 +33,7 @@
     const l = all();
     $("sTokens").textContent = loading ? "…" : l.length;
     $("sMcap").textContent = loading ? "…" : fmtUsd(l.reduce((s, t) => s + (t.mcap || 0), 0));
-    $("sGrad").textContent = loading ? "…" : l.reduce((s, t) => s + (t.holders || 0), 0);
+    $("sGrad").textContent = loading ? "…" : new Set(l.map((t) => (t.creator || "").toLowerCase()).filter(Boolean)).size;
   }
 
   function render() {
@@ -43,7 +43,7 @@
     if (sort === "mine") l = l.filter((t) => t.mine);
     if (sort === "new") l.sort((a, b) => b.createdAt - a.createdAt);
     if (sort === "mcap") l.sort((a, b) => b.mcap - a.mcap);
-    if (sort === "trending") l.sort((a, b) => (b.holders || 0) - (a.holders || 0) || b.mcap - a.mcap);
+    if (sort === "trending") l.sort((a, b) => (b.mcap || 0) / Math.max(1, (Date.now() - b.createdAt) / 36e5) - (a.mcap || 0) / Math.max(1, (Date.now() - a.createdAt) / 36e5));
 
     $("tokens").innerHTML = l.length ? l.map((t, i) => `
       <button class="tok" data-i="${i}" type="button">
@@ -52,13 +52,13 @@
           <div><b>${esc(t.name)}</b><small>$${esc(t.symbol)}${t.createdAt ? " · " + ago(t.createdAt) : ""}</small></div>
           ${isOfficial(t.address) ? '<span class="chip official">⚓ official</span>' : t.mine ? `<span class="chip mine">${t.demo ? "yours · demo" : "yours"}</span>` : ""}
         </div>
-        <p>${esc(t.description || "Launched on Robinhood Chain · " + short(t.address))}</p>
-        <div class="meta"><span>MC ${t.mcap ? fmtUsd(t.mcap) : "—"}</span><span>${t.holders ? t.holders + " holders" : "new"}</span></div>
+        <p>${esc(t.description || "Launched on " + CFG.network + " · " + short(t.address))}</p>
+        <div class="meta"><span>MC ${t.mcap ? fmtUsd(t.mcap) : "—"}</span><span>${short(t.address)}</span></div>
       </button>`).join("")
       : `<div class="empty">${
           sort === "mine" ? 'You haven\'t launched anything yet. <a href="create.html" style="color:var(--accent);font-weight:600">Create a token →</a>'
           : q ? "No tokens match your search."
-          : (feedError ? "Couldn't reach the Robinhood Chain explorer right now. " : "") + 'No tokens yet. <a href="create.html" style="color:var(--accent);font-weight:600">Be the first to launch →</a>'}</div>`;
+          : (feedError ? "Couldn't load launches right now. " : "") + 'No tokens yet. <a href="create.html" style="color:var(--accent);font-weight:600">Be the first to launch →</a>'}</div>`;
 
     $("tokens").querySelectorAll(".tok").forEach((b) => (b.onclick = () => (location.href = tokenUrl(l[+b.dataset.i].address))));
   }
@@ -90,7 +90,6 @@
     const addr = ethers.getAddress(OFFICIAL);
     const href = tokenUrl(addr);
     const paint = (d) => {
-      const pg = d.progress == null ? null : Math.min(100, d.progress);
       el.innerHTML = `
         <a class="off-logo" href="${href}"><img src="assets/logo.png?v=2" alt=""></a>
         <div class="off-main">
@@ -99,10 +98,8 @@
           <div class="off-stats">
             <div><small>Market cap</small><b>${d.mcap ? fmtUsd(d.mcap) : "—"}</b></div>
             <div><small>Price</small><b>${d.price ? "$" + (d.price >= 1 ? d.price.toFixed(2) : d.price.toPrecision(3)) : "—"}</b></div>
-            <div><small>Holders</small><b>${d.holders ? d.holders.toLocaleString("en-US") : "—"}</b></div>
-            <div><small>Bonding</small><b>${d.graduated ? "Graduated" : pg == null ? "—" : pg.toFixed(1) + "%"}</b></div>
+            <div><small>Network</small><b>${esc(CFG.network)}</b></div>
           </div>
-          ${!d.graduated && pg != null ? `<div class="pgbar"><i style="width:${pg}%"></i></div>` : ""}
         </div>
         <div class="off-cta">
           <a class="btn btn-main" href="${href}">Trade $${esc(d.symbol || "SCOTY")} →</a>
@@ -117,29 +114,15 @@
     try {
       const rp = readProvider(chain);
       const token = new ethers.Contract(addr, CFG.tokenAbi, rp);
-      const factory = new ethers.Contract(chain.factory, CFG.factoryAbi, rp);
-      const [name, symbol, info, lt] = await Promise.all([
-        token.name().catch(() => null), token.symbol().catch(() => null),
-        token.getTokenInfo().catch(() => null), factory.getLaunchedToken(addr).catch(() => null),
-      ]);
-      Object.assign(d, { name, symbol, logo: info && Feed.safeImg(info.tokenLogo), description: info && info.tokenDescription, creator: lt && lt.exists ? lt.deployer : null });
-      if (lt && lt.exists) {
-        d.graduated = Number(lt.phase) > 0;
-        const c = new ethers.Contract(lt.curve, CFG.curveAbi, rp);
-        const [res, raised, threshold, supply, stats, tok] = await Promise.all([
-          c.getReserves(), c.realQuoteReserve(), c.graduationThreshold(), token.totalSupply().catch(() => 10n ** 27n),
-          Feed.getJSON(`${chain.explorerApi}/stats`).catch(() => ({})), Feed.getJSON(`${chain.explorerApi}/tokens/${addr}`).catch(() => ({})),
-        ]);
-        const ethUsd = Number(stats.coin_price || 0);
-        const pEth = Number(res[1]) > 0 ? Number(res[0]) / Number(res[1]) : 0;
-        d.price = pEth * ethUsd;
-        d.mcap = d.price * Number(ethers.formatUnits(supply, 18));
-        d.progress = threshold > 0n ? (Number(raised) / Number(threshold)) * 100 : null;
-        d.holders = Number(tok.holders_count || 0);
-        // when it was launched, from the token contract's creation transaction
-        const info2 = await Feed.getJSON(`${chain.explorerApi}/addresses/${addr}`).catch(() => ({}));
-        const ctx = info2.creation_transaction_hash || info2.creation_tx_hash;
-        if (ctx) { const tx = await Feed.getJSON(`${chain.explorerApi}/transactions/${ctx}`).catch(() => ({})); if (tx.timestamp) d.createdAt = Date.parse(tx.timestamp); }
+      const [name, symbol] = await Promise.all([token.name().catch(() => null), token.symbol().catch(() => null)]);
+      Object.assign(d, { name, symbol });
+      const idx = Feed.merge(onchain).find((t) => t.address.toLowerCase() === OFFICIAL);
+      const launch = idx && idx.poolId ? idx : await Market.findLaunch(addr, rp).catch(() => null);
+      if (launch) {
+        const [[priced], usd] = await Promise.all([Market.withMarketCaps([{ ...launch, address: addr }]), Market.hypeUsd()]);
+        d.creator = launch.creator; d.createdAt = launch.createdAt; d.description = idx && idx.description;
+        d.mcap = priced.mcap; d.price = priced.priceHype && usd ? priced.priceHype * usd : 0;
+        d.launch = launch;
       }
     } catch (e) { console.warn("official token unavailable", e); }
     paint(d);
@@ -147,7 +130,7 @@
       officialEntry = {
         name: d.name || "SCOTY", symbol: d.symbol || "SCOTY", description: d.description || "The official SCOTY token.",
         image: d.logo || null, address: addr, creator: d.creator, createdAt: d.createdAt || 0,
-        mcap: d.mcap || 0, holders: d.holders || 0, change: 0, progress: null, chain: chain.key,
+        mcap: d.mcap || 0, chain: chain.key, ...(d.launch ? { poolId: d.launch.poolId, quoteIsCurrency0: d.launch.quoteIsCurrency0, supply: d.launch.supply } : {}),
       };
       stats(); render();
     }
