@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SCOTY — update: stocks + pairs</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* 1200×675 (X image). Render: node branding/tweets/render-update.cjs update2 */
+  :root{--acc:#a78bfa;--acc2:#c4b5fd;--muted:#9ca3af;--line:#2e2e3d;--bad:#ff5c5c}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1200px;height:675px;background:#000;overflow:hidden}
+  .card{position:relative;width:1200px;height:675px;overflow:hidden;font-family:Poppins,sans-serif;color:#fff;padding:44px 56px;
+    background:radial-gradient(760px 380px at 50% -18%,rgba(167,139,250,.24),transparent 70%),radial-gradient(900px 420px at 50% 125%,rgba(70,60,120,.35),transparent 70%),#000}
+  .grid{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.08) 1px,transparent 1.2px);background-size:24px 24px;-webkit-mask-image:radial-gradient(65% 75% at 50% 45%,#000 30%,transparent 85%)}
+  .top{position:relative;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:14px;font-weight:700;font-size:28px}
+  .brand img{width:54px;height:54px;border-radius:15px;border:1px solid rgba(255,255,255,.14);box-shadow:0 10px 34px rgba(167,139,250,.3)}
+  .pill{display:inline-flex;align-items:center;gap:10px;padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:rgba(31,31,46,.6);font:500 13px "JetBrains Mono",monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .pill i{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc)}
+  h1{position:relative;margin:44px 0 34px;font-size:54px;font-weight:600;letter-spacing:-.04em;line-height:1.05;white-space:nowrap;
+    background:linear-gradient(to bottom,#fff,#fff 45%,rgba(255,255,255,.62));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  h1 em{font-style:normal;background:linear-gradient(to bottom,var(--acc2),var(--acc));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .cols{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .f{padding:28px;min-height:300px;border-radius:20px;background:rgba(17,17,28,.75);border:1px solid rgba(167,139,250,.45);box-shadow:0 12px 40px rgba(167,139,250,.12)}
+  .f .tag{font:600 12px "JetBrains Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2)}
+  .f h2{font-size:28px;font-weight:600;letter-spacing:-.02em;margin:6px 0 6px}
+  .f p{font-size:16px;color:#c3c3d0;line-height:1.45}
+  .tickers{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .t{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:10px;background:rgba(0,0,0,.45);border:1px solid var(--line);font:600 14px "JetBrains Mono",monospace}
+  .t .l{color:var(--acc)} .t .s{color:var(--bad)}
+  .seg{display:flex;gap:6px;margin-top:14px;padding:5px;border-radius:12px;background:rgba(0,0,0,.45);border:1px solid var(--line);width:max-content}
+  .seg span{padding:7px 16px;border-radius:9px;font:600 14px Poppins;color:var(--muted)}
+  .seg span.on{background:#fff;color:#000}
+  .pairs{display:flex;align-items:center;gap:10px;margin-top:14px;font:600 14px "JetBrains Mono",monospace;color:var(--muted)}
+  .pairs .c{padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(0,0,0,.45);color:#fff}
+  .pairs .c.on{background:var(--acc);color:#000;border-color:var(--acc)}
+  .foot{position:absolute;left:56px;right:56px;bottom:30px;display:flex;align-items:center;justify-content:space-between;font-size:16px;color:var(--muted)}
+  .foot .url{font:700 22px "JetBrains Mono",monospace;color:#fff}
+  .foot .url span{color:var(--acc2)}
+  .foot em{font-style:normal;color:var(--acc2)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid"></div>
+  <div class="top">
+    <div class="brand"><img src="../logo/scoty-logo-elysium-960.png" alt="">SCOTY</div>
+    <div class="pill"><i></i>New on SCOTY</div>
+  </div>
+  <h1>Trade <em>stocks.</em> Pair with <em>KNTQ.</em></h1>
+  <div class="cols">
+    <div class="f">
+      <span class="tag">Leverage · Stocks</span>
+      <h2>Long or short stocks</h2>
+      <p>New <b>Stocks</b> tab on the Leverage page: stock &amp; index perps on Hyperliquid, paid in USDC.</p>
+      <div class="seg"><span>Crypto</span><span class="on">Stocks</span></div>
+      <div class="tickers"><span class="t">TSLA <span class="l">▲</span></span><span class="t">NVDA <span class="l">▲</span></span><span class="t">AAPL <span class="s">▼</span></span><span class="t">SP500 <span class="l">▲</span></span></div>
+    </div>
+    <div class="f">
+      <span class="tag">Create · New pairs</span>
+      <h2>Launch on a KNTQ pair</h2>
+      <p>Pick what your coin trades against. Buys, sells and your initial buy go through that token.</p>
+      <div class="pairs">Pair with <span class="c">HYPE</span><span class="c on">KNTQ</span></div>
+      <div class="tickers"><span class="t">Initial buy in KNTQ</span><span class="t">Mcap in USD</span></div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="url">scoty<span>.fun</span></div>
+    <div>Type it. <em>Launch it.</em> · @Scotydotfun</div>
+  </div>
+</div>
+</body>
+</html>
