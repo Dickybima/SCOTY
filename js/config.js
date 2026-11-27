@@ -51,6 +51,8 @@ window.SCOTY_CONFIG = {
 
   // Token addresses hidden from Explore and Profile (e.g. test launches)
   hiddenTokens: [],
+  // Launches before this time (ms) are test launches and are hidden too (cleared 2026-11-27)
+  hideLaunchedBefore: 1795775676000,
 
   // Supply every SCOTY launch mints (whole tokens). Montra allows 1e9 … 1e15.
   supply: 1000000000,
