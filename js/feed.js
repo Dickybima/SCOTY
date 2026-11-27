@@ -22,7 +22,8 @@
     }
     for (const a of CFG.hiddenTokens || []) map.delete(String(a).toLowerCase());
     const cut = CFG.hideLaunchedBefore || 0;
-    for (const [k, t] of map) if (cut && (!t.createdAt || t.createdAt < cut)) map.delete(k);
+    const off = (CFG.officialToken || "").toLowerCase();
+    for (const [k, t] of map) if (cut && k !== off && (!t.createdAt || t.createdAt < cut)) map.delete(k);
     const me = W.address && W.address.toLowerCase();
     return [...map.values()].map((t) => ({ ...t, mine: t.mine || (me && t.creator && t.creator.toLowerCase() === me) }));
   }
