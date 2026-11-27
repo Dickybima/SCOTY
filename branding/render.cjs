@@ -6,8 +6,8 @@ const path = require("path");
 
 (async () => {
   const browser = await chromium.launch();
-  const file = "file://" + path.join(__dirname, "x-header.html");
-  for (const [scale, name] of [[1, "x-header.png"], [2, "x-header@2x.png"]]) {
+  const file = "file://" + path.join(__dirname, process.argv[2] || "x-header.html");
+  for (const [scale, name] of (process.argv[3] ? [[1, process.argv[3] + ".png"], [2, process.argv[3] + "@2x.png"]] : [[1, "x-header.png"], [2, "x-header@2x.png"]])) {
     const page = await browser.newPage({ viewport: { width: 1500, height: 500 }, deviceScaleFactor: scale });
     await page.goto(file, { waitUntil: "networkidle" });
     await page.evaluate(() => document.fonts.ready);
