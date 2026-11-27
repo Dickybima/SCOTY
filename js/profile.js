@@ -57,7 +57,7 @@
     if (id !== loadId) return;
     positions = withPx.map((t, i) => {
       const amount = Number(ethers.formatUnits(bal[i], 18));
-      return { ...t, amount, value: amount * (t.priceHype || 0) * coinPrice };
+      return { ...t, amount, value: amount * (t.priceUsd > 0 ? t.priceUsd : (t.priceHype || 0) * coinPrice) };
     }).filter((p) => p.amount > 0).sort((a, b) => b.value - a.value);
 
     // portfolio

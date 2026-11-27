@@ -49,6 +49,12 @@ window.SCOTY_CONFIG = {
   // The official $SCOTY token, featured at the top of Explore ("" for none)
   officialToken: "0x3c1941ad71a81b840b103412f901a647b34178ac",
 
+  // Pair tokens Montra offers besides native HYPE (symbol shown if the chain read fails;
+  // USD price from CoinGecko when an id is set, else DexScreener)
+  pairs: [
+    { address: "0xe45a355d9e9cad2ad85f2d03e3ee3102a036acf0", symbol: "KNTQ" },
+  ],
+
   // Hyperliquid HIP-3 dexes listed under "Stocks" on the Leverage page
   hlStockDexes: ["xyz"],
 

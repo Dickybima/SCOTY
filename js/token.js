@@ -31,8 +31,10 @@
     return x.toFixed(Math.min(18, z + 3));
   }
   const usd = (x) => (x >= 1 ? "$" + compact(x) : "$" + small(x));
-  const hype = (x) => (x >= 0.0001 || x === 0 ? num(x, 6) : x.toExponential(2)) + " HYPE";
-  const f18 = (w) => Number(ethers.formatUnits(w, 18));
+  const QS = () => (S.pair ? S.pair.symbol : chain.symbol);           // pair token symbol (HYPE, KNTQ, …)
+  const QD = () => (S.pair ? S.pair.decimals : 18);
+  const hype = (x) => (x >= 0.0001 || x === 0 ? num(x, 6) : x.toExponential(2)) + " " + QS();
+  const f18 = (w) => Number(ethers.formatUnits(w, QD()));
   const tokF = (w) => Number(ethers.formatUnits(w, S.decimals));
   const mcapOf = (p) => (S.usd ? p * S.supply * S.usd : p * S.supply);
   const fmtMcap = (p) => (S.usd ? usd(mcapOf(p)) : hype(p * S.supply));
@@ -69,6 +71,7 @@
     S.key = S.launch.key;
     // native HYPE is currency0 in Montra's HYPE pools: buying the coin swaps 0 → 1
     S.buyIsZeroForOne = S.launch.quoteIsCurrency0 !== false;
+    S.pair = await Market.pairInfo(S.launch.quote, rp).catch(() => ({ native: true, symbol: chain.symbol, decimals: 18 }));
 
     renderHead(S.launch);
     $("tkMsg").hidden = true;
@@ -113,7 +116,7 @@
   async function refreshPrice() {
     try {
       const sv = new ethers.Contract(chain.stateView, CFG.stateViewAbi, readProvider(chain));
-      const [s0, u] = await Promise.all([sv.getSlot0(S.poolId), Market.hypeUsd()]);
+      const [s0, u] = await Promise.all([sv.getSlot0(S.poolId), Market.quoteUsd(S.launch.quote)]);
       S.priceHype = Market.priceFromSqrt(s0.sqrtPriceX96, S.launch.quoteIsCurrency0);
       S.usd = u;
     } catch (e) { console.warn("price read failed", e); }
@@ -170,7 +173,8 @@
     try {
       const rp = readProvider(chain);
       const token = new ethers.Contract(address, CFG.tokenAbi, rp);
-      [S.myHype, S.myTok] = await Promise.all([rp.getBalance(W.address), token.balanceOf(W.address)]);
+      const quoteBal = !S.pair || S.pair.native ? rp.getBalance(W.address) : new ethers.Contract(S.pair.address, CFG.tokenAbi, rp).balanceOf(W.address);
+      [S.myHype, S.myTok] = await Promise.all([quoteBal, token.balanceOf(W.address)]);
     } catch (_) { S.myHype = S.myTok = null; }
     renderTrade();
   }
@@ -183,7 +187,7 @@
     $("stMcap").textContent = p ? fmtMcap(p) : "—";
     $("stMcapEth").textContent = p && S.usd ? hype(p * S.supply) : "";
     $("stPrice").textContent = p ? (S.usd ? usd(p * S.usd) : hype(p)) : "—";
-    $("stPriceEth").textContent = p && S.usd ? small(p) + " HYPE" : "";
+    $("stPriceEth").textContent = p && S.usd ? small(p) + " " + QS() : "";
     $("stSupply").textContent = compact(S.supply);
     $("stTax").textContent = S.feePct == null ? "—" : S.feePct + "%";
     $("stFee").textContent = S.feePct == null ? "" : WINDOW_LABEL(S.window);
@@ -247,7 +251,7 @@
   function renderTrades() {
     const el = $("txs");
     if (!S.trades.length) { el.innerHTML = '<div class="empty">No trades yet.</div>'; return; }
-    el.innerHTML = `<div class="txrow txhead"><span>Type</span><span>HYPE</span><span>${esc(S.symbol)}</span><span>Tx</span><span>Time</span></div>` +
+    el.innerHTML = `<div class="txrow txhead"><span>Type</span><span>${esc(QS())}</span><span>${esc(S.symbol)}</span><span>Tx</span><span>Time</span></div>` +
       S.trades.slice(0, 40).map((t) => `
         <a class="txrow" href="${chain.txUrl(t.tx)}" target="_blank" rel="noopener">
           <span class="${t.buy ? "buy" : "sell"}">${t.buy ? "Buy" : "Sell"}</span>
@@ -262,7 +266,7 @@
   function amountWei() {
     const v = $("amt").value.trim();
     if (!v || !(Number(v) > 0)) return 0n;
-    try { return ethers.parseUnits(v, S.side === "buy" ? 18 : S.decimals); } catch (_) { return 0n; }
+    try { return ethers.parseUnits(v, S.side === "buy" ? QD() : S.decimals); } catch (_) { return 0n; }
   }
   const zeroForOne = () => (S.side === "buy" ? S.buyIsZeroForOne : !S.buyIsZeroForOne);
 
@@ -286,10 +290,10 @@
     const buy = S.side === "buy";
     $("seg").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.s === S.side));
     $("amtLbl").textContent = buy ? "You pay" : "You sell";
-    $("amtUnit").textContent = buy ? "HYPE" : S.symbol || "TOKEN";
+    $("amtUnit").textContent = buy ? QS() : S.symbol || "TOKEN";
     const bal = buy ? S.myHype : S.myTok;
-    $("balLbl").textContent = bal == null ? "" : "Balance: " + (buy ? num(f18(bal), 5) + " HYPE" : compact(tokF(bal)) + " " + S.symbol);
-    const chips = buy ? ["0.1", "0.5", "1", "5"] : ["25%", "50%", "75%", "Max"];
+    $("balLbl").textContent = bal == null ? "" : "Balance: " + (buy ? num(f18(bal), 5) + " " + QS() : compact(tokF(bal)) + " " + S.symbol);
+    const chips = buy ? (!S.pair || S.pair.native ? ["0.1", "0.5", "1", "5"] : ["10", "50", "100", "500"]) : ["25%", "50%", "75%", "Max"];
     const ck = chips.join();
     if ($("qChips").dataset.k !== ck) {
       $("qChips").dataset.k = ck;
@@ -335,7 +339,7 @@
   const setStatus = (m, c = "") => { const s = $("tradeStatus"); s.className = "status " + c; s.innerHTML = m; };
   function tradeError(e) {
     if (e.code === "ACTION_REJECTED" || e.code === 4001) return "You rejected the transaction.";
-    if (/insufficient funds/i.test(e.message || "")) return "Not enough HYPE for the amount plus gas.";
+    if (/insufficient funds/i.test(e.message || "")) return `Not enough ${chain.symbol} for the amount plus gas.`;
     if (/slippage|minOut|too little|INSUFFICIENT_OUTPUT/i.test((e.shortMessage || "") + (e.reason || "") + (e.message || ""))) return "Price moved past your slippage limit. Try again or raise slippage.";
     return e.shortMessage || e.reason || e.message || String(e);
   }
@@ -351,17 +355,20 @@
       const signer = await new ethers.BrowserProvider(W.provider).getSigner();
       const router = new ethers.Contract(chain.router, CFG.routerAbi, signer);
       const buy = S.side === "buy";
-      if (!buy) {
-        const tk = new ethers.Contract(address, CFG.tokenAbi, signer);
+      const native = !S.pair || S.pair.native;
+      if (!buy || !native) {
+        // the router pulls the coin (sell) or the pair token (buy on a token pair): approve once
+        const pay = buy ? S.pair.address : address, what = buy ? S.pair.symbol : "$" + S.symbol;
+        const tk = new ethers.Contract(pay, CFG.tokenAbi, signer);
         if ((await tk.allowance(W.address, chain.router)) < inWei) {
-          setStatus(`One-time approval so Montra's router can sell your $${esc(S.symbol)}…`);
+          setStatus(`One-time approval so Montra's router can use your ${esc(what)}…`);
           await (await tk.approve(chain.router, ethers.MaxUint256)).wait();
         }
       }
       const est = await router.quoteExactIn.staticCall(S.key, zeroForOne(), inWei);
       const params = { key: S.key, zeroForOne: zeroForOne(), amountIn: inWei, minOut: (est * (BPS - slip)) / BPS,
         recipient: W.address, deadline: BigInt(Math.floor(Date.now() / 1000) + 600) };
-      const tx = await router.swapExactIn(params, { value: buy ? inWei : 0n });
+      const tx = await router.swapExactIn(params, { value: buy && native ? inWei : 0n });
       setStatus(`Waiting for confirmation… <a href="${chain.txUrl(tx.hash)}" target="_blank" rel="noopener">view tx ↗</a>`);
       const rc = await tx.wait();
       if (rc.status !== 1) throw new Error("Transaction reverted.");

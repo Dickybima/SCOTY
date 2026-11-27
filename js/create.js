@@ -180,7 +180,7 @@
   // Montra launch configs: each is a pair + fee + anti-snipe window. SCOTY launches HYPE pairs.
   const ZERO = "0x0000000000000000000000000000000000000000";
   const WINDOW_LABEL = (s) => (!s ? "None" : s < 60 ? s + "s" : s / 60 + "m");
-  state.fee = 2; state.window = 0; state.feeTo = "creator"; state.configs = null;
+  state.fee = 2; state.window = 0; state.feeTo = "creator"; state.configs = null; state.quote = ZERO; state.pairs = {};
 
   async function loadConfigs(provider) {
     const f = new ethers.Contract(state.chain.factory, CFG.factoryAbi, provider);
@@ -190,14 +190,42 @@
     for (let i = 0; i < ids.length; i += 50) {
       const part = await Promise.all(ids.slice(i, i + 50).map((id) => f.getConfig(id).then((c) => ({ id, c })).catch(() => null)));
       for (const x of part) {
-        if (!x || !x.c.exists || !x.c.enabled || x.c.quote.toLowerCase() !== ZERO) continue;
-        out.push({ id: x.id, fee: Number(x.c.totalFeePips) / 10000, window: Number(x.c.earlyBuyFeeStartPips) > 0 ? Number(x.c.earlyBuyFeeWindow) : 0 });
+        if (!x || !x.c.exists || !x.c.enabled) continue;
+        out.push({ id: x.id, quote: x.c.quote.toLowerCase(), fee: Number(x.c.totalFeePips) / 10000, window: Number(x.c.earlyBuyFeeStartPips) > 0 ? Number(x.c.earlyBuyFeeWindow) : 0 });
       }
     }
     return out;
   }
+  const pair = () => state.pairs[state.quote] || { native: true, symbol: state.chain.symbol, decimals: 18, address: ZERO };
+  const BUY_CHIPS = { native: ["0.1", "0.5", "1", "2"], token: ["10", "50", "100", "500"] };
+  async function loadPairs(provider) {
+    const qs = [...new Set((state.configs || []).map((c) => c.quote))];
+    await Promise.all(qs.map(async (q) => { try { state.pairs[q] = await window.SCOTY.Market.pairInfo(q, provider); } catch (_) {} }));
+  }
+  function renderPairs() {
+    const qs = [...new Set((state.configs || []).map((c) => c.quote))].filter((q) => state.pairs[q] || q === ZERO);
+    if (!qs.includes(state.quote)) state.quote = ZERO;
+    qs.sort((a, b) => (a === ZERO ? -1 : b === ZERO ? 1 : pairLabel(a).localeCompare(pairLabel(b))));
+    $("pairChips").innerHTML = (qs.length ? qs : [ZERO]).map((q) => `<button type="button" data-q="${q}" class="${q === state.quote ? "on" : ""}">${esc(pairLabel(q))}</button>`).join("");
+    $("pairChips").querySelectorAll("button").forEach((b) => (b.onclick = () => {
+      if (!b.dataset.q || b.dataset.q === state.quote) return;
+      state.quote = b.dataset.q; $("devBuy").value = "";
+      renderPairs(); renderChoices(); renderSummary();
+    }));
+    const p = pair();
+    $("pairVal").textContent = p.symbol;
+    $("pairNote").textContent = p.native ? `Your coin trades against native ${p.symbol}.` : `Your coin trades against ${p.symbol}. Buyers pay in ${p.symbol}, and your initial buy is paid in ${p.symbol} (one approval first).`;
+    $("buyUnit").textContent = p.symbol;
+    const vals = p.native ? BUY_CHIPS.native : BUY_CHIPS.token;
+    $("buyChips").innerHTML = `<button type="button" data-v="0" class="on">None</button>` + vals.map((v) => `<button type="button" data-v="${v}">${v}</button>`).join("");
+    $("buyChips").querySelectorAll("button").forEach((b) => (b.onclick = () => {
+      $("devBuy").value = b.dataset.v === "0" ? "" : b.dataset.v;
+      $("devBuy").dispatchEvent(new Event("input"));
+    }));
+  }
+  const pairLabel = (q) => (q === ZERO ? state.chain.symbol : (state.pairs[q] && state.pairs[q].symbol) || q.slice(0, 6));
   function renderChoices() {
-    const cs = state.configs;
+    const cs = state.configs && state.configs.filter((c) => c.quote === state.quote);
     const fees = cs ? [...new Set(cs.map((c) => c.fee))].sort((a, b) => a - b) : [1, 2, 3, 5, 10];
     if (!fees.includes(state.fee)) state.fee = fees.includes(2) ? 2 : fees[0];
     const windows = cs ? [...new Set(cs.filter((c) => c.fee === state.fee).map((c) => c.window))].sort((a, b) => a - b) : [0, 5, 10, 30, 60, 300, 900, 1800];
@@ -217,14 +245,14 @@
       : "Your side of every trading fee is paid to your wallet.";
     renderSummary();
   }));
-  const pickConfig = () => state.configs && state.configs.find((c) => c.fee === state.fee && c.window === state.window);
+  const pickConfig = () => state.configs && state.configs.find((c) => c.quote === state.quote && c.fee === state.fee && c.window === state.window);
 
   // ── Initial buy ────────────────────────────────────────────
-  const fmtAmt = (wei) => Number(ethers.formatEther(wei)).toLocaleString("en-US", { maximumFractionDigits: 6 });
+  const fmtAmt = (wei, dec = 18) => Number(ethers.formatUnits(wei, dec)).toLocaleString("en-US", { maximumFractionDigits: 6 });
   function devBuyWei() {
     const v = $("devBuy").value.trim();
     if (!v || !window.ethers) return 0n;
-    try { const w = ethers.parseEther(v); return w > 0n ? w : 0n; } catch (_) { return 0n; }
+    try { const w = ethers.parseUnits(v, pair().decimals); return w > 0n ? w : 0n; } catch (_) { return 0n; }
   }
   $("devBuy").addEventListener("input", () => {
     const v = $("devBuy").value;
@@ -238,17 +266,20 @@
 
   // ── Step 04 ───────────────────────────────────────────────
   function renderSummary() {
-    const sym = state.chain.symbol;
+    const sym = state.chain.symbol, P = pair();
     const buy = devBuyWei();
+    const total = state.feeWei == null ? "—" : P.native ? fmtAmt(state.feeWei + buy) + " " + sym + " + gas"
+      : (buy > 0n ? fmtAmt(buy, P.decimals) + " " + P.symbol + " + " : "") + fmtAmt(state.feeWei) + " " + sym + " + gas";
     $("summary").innerHTML = `
       <div><span>Token      </span> ${esc($("name").value || "—")} ($${esc($("symbol").value || "—")})</div>
       <div><span>Network    </span> ${esc(state.chain.name)} · ${esc(CFG.protocol)}</div>
+      <div><span>Pair       </span> ${esc(P.symbol)}</div>
       <div><span>Creator    </span> ${W.address ? short(W.address) : "connect wallet"}</div>
       <div><span>Supply     </span> ${CFG.supply.toLocaleString("en-US")}</div>
       <div><span>Trading fee</span> ${state.fee}% · anti-snipe ${WINDOW_LABEL(state.window)} · to ${state.feeTo === "holders" ? "holders" : "you"}</div>
-      <div><span>Initial buy</span> ${buy > 0n ? fmtAmt(buy) + " " + sym : "none"}</div>
+      <div><span>Initial buy</span> ${buy > 0n ? fmtAmt(buy, P.decimals) + " " + esc(P.symbol) : "none"}</div>
       <div><span>Launch fee </span> ${state.feeWei == null ? "—" : fmtAmt(state.feeWei) + " " + sym}</div>
-      <div><span>Total      </span> ${state.feeWei == null ? "—" : fmtAmt(state.feeWei + buy) + " " + sym} + gas</div>`;
+      <div><span>Total      </span> ${esc(total)}</div>`;
     $("deploy").textContent = W.address ? "🚀 Launch token" : "Connect wallet to launch";
   }
   function renderDemo() { $("demoNote").innerHTML = ""; }
@@ -266,8 +297,8 @@
         const f = new ethers.Contract(state.chain.factory, CFG.factoryAbi, p);
         const [fee, configs] = await Promise.all([f.launchFee(), loadConfigs(p)]);
         state.feeWei = fee;
-        if (configs.length) state.configs = configs;
-        renderChoices(); renderSummary();
+        if (configs.length) { state.configs = configs; await loadPairs(p); }
+        renderPairs(); renderChoices(); renderSummary();
         return;
       } catch (e) { console.warn("Montra read failed", e); }
     }
@@ -287,6 +318,7 @@
   function launchError(e) {
     if (e.code === "ACTION_REJECTED" || e.code === 4001) return "You rejected the transaction.";
     if (/insufficient funds/i.test(e.message || "")) return `Not enough ${state.chain.symbol} for the launch plus gas.`;
+    if (/allowance|transfer amount exceeds/i.test(e.message || "")) return `Your ${pair().symbol} approval or balance is too low for the initial buy.`;
     const name = e.revert && e.revert.name;
     if (name === "FirstBuySlippage") return "The price moved before your initial buy. Please try again.";
     if (name === "SupplyOutOfRange" || name === "SupplyNotWholeCoins") return "Montra rejected the token supply.";
@@ -348,11 +380,27 @@
       setStatus("Preparing launch…");
       const [enabled, fee, balance] = await Promise.all([factory.launchEnabled(), factory.launchFee(), provider.getBalance(W.address)]);
       if (!enabled) throw new Error("Montra has launches switched off right now.");
-      if (!state.configs) { state.configs = await loadConfigs(provider); renderChoices(); }
+      if (!state.configs) { state.configs = await loadConfigs(provider); await loadPairs(provider); renderPairs(); renderChoices(); }
       const cfg = pickConfig();
-      if (!cfg) throw new Error(`Montra has no ${state.fee}% config with a ${WINDOW_LABEL(state.window)} anti-snipe window. Pick another.`);
-      const buy = devBuyWei();
-      if (balance < fee + buy) throw new Error(`Not enough ${chain.symbol}: you need ${fmtAmt(fee + buy)} ${chain.symbol} plus gas.`);
+      if (!cfg) throw new Error(`Montra has no ${pair().symbol} ${state.fee}% config with a ${WINDOW_LABEL(state.window)} anti-snipe window. Pick another.`);
+      const buy = devBuyWei(), P = pair();
+      if (P.native) {
+        if (balance < fee + buy) throw new Error(`Not enough ${chain.symbol}: you need ${fmtAmt(fee + buy)} ${chain.symbol} plus gas.`);
+      } else {
+        if (balance < fee) throw new Error(`Not enough ${chain.symbol} for the launch fee and gas.`);
+        if (buy > 0n) {
+          // the factory pulls the initial buy in the pair token: check balance, approve once
+          const qt = new ethers.Contract(P.address, CFG.tokenAbi, signer);
+          const [bal, allow] = await Promise.all([qt.balanceOf(W.address), qt.allowance(W.address, chain.factory)]);
+          if (bal < buy) throw new Error(`Not enough ${P.symbol}: you have ${fmtAmt(bal, P.decimals)}, the initial buy needs ${fmtAmt(buy, P.decimals)}.`);
+          if (allow < buy) {
+            setStatus(`Approve ${esc(P.symbol)} for your initial buy in your wallet…`);
+            const ap = await qt.approve(chain.factory, buy);
+            setStatus(`Approving ${esc(P.symbol)}… <a href="${chain.txUrl(ap.hash)}" target="_blank" rel="noopener">view tx ↗</a>`);
+            await ap.wait();
+          }
+        }
+      }
 
       // logo + metadata, hosted so Montra and explorers can show them
       setStatus("Uploading logo and metadata…");
@@ -375,7 +423,7 @@
         firstBuyAmount: buy, firstBuyMinOut: 0n,
         permit: { deadline: 0n, v: 0, r: ethers.ZeroHash, s: ethers.ZeroHash },
       };
-      const value = fee + buy;
+      const value = P.native ? fee + buy : fee;
 
       // initial buy: ask the chain for the exact output (it reverts FirstBuySlippage(out, min)
       // when the minimum is impossible), then allow 1% like Montra's own site
@@ -398,17 +446,17 @@
       const rc = await sent.wait();
       if (rc.status !== 1) throw new Error("Transaction reverted.");
 
-      let address = null, poolId = null;
+      let address = null, poolId = null, quoteIsCurrency0 = true;
       for (const log of rc.logs) {
         if (log.address.toLowerCase() !== chain.factory.toLowerCase()) continue;
-        try { const ev = factory.interface.parseLog(log); if (ev && ev.name === "TokenLaunched") { address = ethers.getAddress(ev.args.token); poolId = ev.args.poolId; } } catch (_) {}
+        try { const ev = factory.interface.parseLog(log); if (ev && ev.name === "TokenLaunched") { address = ethers.getAddress(ev.args.token); poolId = ev.args.poolId; quoteIsCurrency0 = ev.args.quoteIsCurrency0; } } catch (_) {}
       }
       if (!address) throw new Error("Launched, but the token address wasn't found in the receipt.");
 
       setStatus("Adding your coin to Explore…");
       await registerLaunch(sent.hash);
       Store.add({ name, symbol, description: desc, image: logo, twitter: socials.twitter, website: socials.website,
-        address, poolId, tx: sent.hash, chain: chain.key, creator: W.address, createdAt: Date.now(), mcap: 0, mine: true });
+        address, poolId, quote: P.address, quoteIsCurrency0, tx: sent.hash, chain: chain.key, creator: W.address, createdAt: Date.now(), mcap: 0, mine: true });
       const bought = expectedOut > 0n ? ` You bought ${Number(ethers.formatUnits(expectedOut, 18)).toLocaleString("en-US", { maximumFractionDigits: 0 })} $${esc(symbol)}.` : "";
       setStatus(`✅ $${esc(symbol)} is live on ${esc(CFG.protocol)}!${bought} Opening your token page…`, "ok");
       setTimeout(() => (location.href = "token.html?address=" + address), bought ? 3000 : 1500);
@@ -420,5 +468,5 @@
     }
   };
 
-  renderChains(); renderDemo(); renderChoices(); renderSummary(); loadMontra();
+  renderChains(); renderDemo(); renderPairs(); renderChoices(); renderSummary(); loadMontra();
 })();

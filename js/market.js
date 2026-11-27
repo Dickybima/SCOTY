@@ -25,7 +25,48 @@
     } catch (_) { return usdCache ? usdCache.v : 0; }
   }
 
-  // Price of the coin in HYPE from a pool's sqrtPriceX96.
+  // Pair (quote) token info: native HYPE or an ERC-20 like KNTQ
+  const ZERO = "0x0000000000000000000000000000000000000000";
+  const isNative = (q) => !q || String(q).toLowerCase() === ZERO;
+  const pairCache = {};
+  async function pairInfo(quote, provider) {
+    if (isNative(quote)) return { native: true, address: ZERO, symbol: chain.symbol, decimals: 18 };
+    const k = String(quote).toLowerCase();
+    if (pairCache[k]) return pairCache[k];
+    const known = (CFG.pairs || []).find((p) => p.address.toLowerCase() === k);
+    try { const c = JSON.parse(localStorage.getItem("scoty.pair." + k) || "null"); if (c) return (pairCache[k] = c); } catch (_) {}
+    const t = new ethers.Contract(quote, ["function symbol() view returns (string)", "function decimals() view returns (uint8)"], provider || readProvider(chain));
+    const [symbol, decimals] = await Promise.all([t.symbol().catch(() => (known && known.symbol) || "TOKEN"), t.decimals().then(Number).catch(() => 18)]);
+    const info = { native: false, address: ethers.getAddress(quote), symbol: (known && known.symbol) || symbol, decimals };
+    try { localStorage.setItem("scoty.pair." + k, JSON.stringify(info)); } catch (_) {}
+    return (pairCache[k] = info);
+  }
+
+  // USD price of a pair token: HYPE from CoinGecko, others from CoinGecko (if configured) or DexScreener
+  const qUsd = {};
+  async function quoteUsd(quote) {
+    if (isNative(quote)) return hypeUsd();
+    const k = String(quote).toLowerCase();
+    if (qUsd[k] && Date.now() - qUsd[k].at < 60000) return qUsd[k].v;
+    let v = 0;
+    const known = (CFG.pairs || []).find((p) => p.address.toLowerCase() === k);
+    try {
+      if (known && known.coingeckoId) {
+        const d = await (await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${known.coingeckoId}&vs_currencies=usd`)).json();
+        v = Number(d[known.coingeckoId] && d[known.coingeckoId].usd) || 0;
+      }
+      if (!v) {
+        const d = await (await fetch(`https://api.dexscreener.com/latest/dex/tokens/${quote}`)).json();
+        const pr = (d.pairs || []).filter((x) => x.baseToken && x.baseToken.address.toLowerCase() === k && Number(x.priceUsd) > 0)
+          .sort((a, b) => Number((b.liquidity || {}).usd || 0) - Number((a.liquidity || {}).usd || 0))[0];
+        v = pr ? Number(pr.priceUsd) : 0;
+      }
+    } catch (_) {}
+    qUsd[k] = { v, at: Date.now() };
+    return v;
+  }
+
+  // Price of the coin in its pair token (HYPE for HYPE pairs) from a pool's sqrtPriceX96.
   // In v4 the price is currency1 per currency0; native HYPE always sorts first (currency0).
   function priceFromSqrt(sqrtPriceX96, quoteIsCurrency0) {
     const r = Number(sqrtPriceX96) / Q96;
@@ -54,11 +95,14 @@
   // Fill in mcap (USD) for a list of launches
   async function withMarketCaps(launches) {
     if (!window.ethers || !launches.length) return launches;
-    const [px, usd] = await Promise.all([prices(launches), hypeUsd()]);
+    const quotes = [...new Set(launches.map((l) => (isNative(l.quote) ? ZERO : String(l.quote).toLowerCase())))];
+    const [px, usds] = await Promise.all([prices(launches), Promise.all(quotes.map((q) => quoteUsd(q).catch(() => 0)))]);
+    const usdOf = Object.fromEntries(quotes.map((q, i) => [q, usds[i]]));
     return launches.map((l) => {
       const p = px[l.address.toLowerCase()];
       if (p == null) return l;
-      return { ...l, priceHype: p, mcapHype: p * supplyOf(l), mcap: usd ? p * supplyOf(l) * usd : l.mcap || 0 };
+      const usd = usdOf[isNative(l.quote) ? ZERO : String(l.quote).toLowerCase()] || 0;
+      return { ...l, priceHype: p, priceQuote: p, priceUsd: usd ? p * usd : 0, mcapHype: p * supplyOf(l), mcap: usd ? p * supplyOf(l) * usd : l.mcap || 0 };
     });
   }
 
@@ -92,5 +136,5 @@
     };
   }
 
-  window.SCOTY.Market = { hypeUsd, prices, priceFromSqrt, withMarketCaps, findLaunch, supplyOf };
+  window.SCOTY.Market = { hypeUsd, quoteUsd, pairInfo, isNative, prices, priceFromSqrt, withMarketCaps, findLaunch, supplyOf };
 })();
