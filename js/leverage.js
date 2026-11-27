@@ -3,11 +3,14 @@
   const { W, esc } = window.SCOTY;
   const HL = window.SCOTY_HL;
   const $ = (id) => document.getElementById(id);
-  const QUICK = ["HYPE", "BTC", "ETH", "SOL", "XRP", "DOGE"];
+  const QUICK = { crypto: ["HYPE", "BTC", "ETH", "SOL", "XRP", "DOGE"], stock: ["TSLA", "NVDA", "AAPL", "MSFT", "GOOGL", "SP500"] };
+  const CFG = window.SCOTY.CFG;
+  const STOCK_DEXES = (CFG.hlStockDexes || ["xyz"]).map((d) => d.toLowerCase());
+  const label = (m) => (m ? m.name.split(":").pop() : "");
   const TAKER = 0.00045; // Hyperliquid base taker fee
 
   const S = {
-    markets: [], byCoin: new Map(), coin: null, side: "long", mode: "cross", lev: 10, tf: "1h",
+    markets: [], byCoin: new Map(), dexes: [], kind: "crypto", coin: null, side: "long", mode: "cross", lev: 10, tf: "1h",
     user: null, agent: null, account: null, spotUsdc: 0, positions: [], mids: {}, candles: [], busy: false,
   };
 
@@ -27,25 +30,42 @@
   // ── markets ──
   async function loadMarkets() {
     const [meta, ctxs] = await HL.meta();
-    S.markets = meta.universe.map((u, i) => ({ ...u, asset: i, ctx: ctxs[i] || {} })).filter((m) => !m.isDelisted);
+    const list = meta.universe.map((u, i) => ({ ...u, asset: i, dex: "", kind: "crypto", ctx: ctxs[i] || {} }));
+    try {
+      if (!S.dexes.length) {
+        const all = await HL.perpDexs();
+        S.dexes = (all || []).map((d, i) => (d && i > 0 ? { name: d.name, fullName: d.fullName, offset: 110000 + (i - 1) * 10000 } : null))
+          .filter((d) => d && STOCK_DEXES.includes(String(d.name).toLowerCase()));
+      }
+      for (const d of S.dexes) {
+        const [dm, dc] = await HL.meta(d.name);
+        dm.universe.forEach((u, i) => list.push({ ...u, asset: d.offset + i, dex: d.name, kind: "stock", ctx: (dc || [])[i] || {} }));
+      }
+    } catch (e) { console.warn("stock markets unavailable", e); }
+    S.markets = list.filter((m) => !m.isDelisted);
     S.byCoin = new Map(S.markets.map((m) => [m.name, m]));
     for (const m of S.markets) S.mids[m.name] = num(m.ctx.midPx || m.ctx.markPx);
   }
   const market = () => S.byCoin.get(S.coin);
 
   function renderQuick() {
-    $("quick").innerHTML = QUICK.filter((c) => S.byCoin.has(c)).map((c) => `<button type="button" data-c="${c}" class="${c === S.coin ? "on" : ""}">${c}</button>`).join("");
+    const names = S.kind === "stock"
+      ? QUICK.stock.map((c) => S.markets.find((m) => m.kind === "stock" && label(m) === c)?.name).filter(Boolean)
+      : QUICK.crypto.filter((c) => S.byCoin.has(c));
+    const extra = S.kind === "stock" ? S.markets.filter((m) => m.kind === "stock" && !names.includes(m.name)).sort((a, b) => num(b.ctx.dayNtlVlm) - num(a.ctx.dayNtlVlm)).slice(0, Math.max(0, 6 - names.length)).map((m) => m.name) : [];
+    $("quick").innerHTML = [...names, ...extra].map((c) => `<button type="button" data-c="${esc(c)}" class="${c === S.coin ? "on" : ""}">${esc(c.split(":").pop())}</button>`).join("") || `<span class="muted">No markets</span>`;
+    $("kind").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.k === S.kind));
     $("quick").querySelectorAll("button").forEach((b) => (b.onclick = () => pick(b.dataset.c)));
   }
   function renderList() {
     const q = $("coinSearch").value.trim().toUpperCase();
     const rows = S.markets
-      .filter((m) => !q || m.name.toUpperCase().includes(q))
+      .filter((m) => m.kind === S.kind && (!q || m.name.toUpperCase().includes(q) || label(m).includes(q)))
       .sort((a, b) => num(b.ctx.dayNtlVlm) - num(a.ctx.dayNtlVlm))
       .slice(0, 80)
       .map((m) => {
         const prev = num(m.ctx.prevDayPx), px = S.mids[m.name] || num(m.ctx.markPx), ch = prev ? px / prev - 1 : 0;
-        return `<button type="button" data-c="${esc(m.name)}"><b>${esc(m.name)}</b><span class="pill-s">${m.maxLeverage}x</span><span class="mono">${fmtPx(px)}</span><span class="mono ${ch >= 0 ? "up" : "down"}">${pct(ch)}</span></button>`;
+        return `<button type="button" data-c="${esc(m.name)}"><b>${esc(label(m))}</b><span class="pill-s">${m.maxLeverage}x</span><span class="mono">${fmtPx(px)}</span><span class="mono ${ch >= 0 ? "up" : "down"}">${pct(ch)}</span></button>`;
       });
     $("coinList").innerHTML = rows.join("") || '<div class="empty">No market found</div>';
     $("coinList").querySelectorAll("button").forEach((b) => (b.onclick = () => { pick(b.dataset.c); toggleDrop(false); }));
@@ -61,7 +81,13 @@
     try { history.replaceState(null, "", "?coin=" + encodeURIComponent(coin)); } catch (_) {}
     try { localStorage.setItem("scoty.lev.coin", coin); } catch (_) {}
     const m = market();
-    $("coinSym").textContent = coin + "-USD";
+    S.kind = m.kind;
+    $("coinSym").textContent = label(m) + "-USD";
+    $("coinKind").textContent = m.kind === "stock" ? "Stock perp" : "Crypto perp";
+    const isoOnly = !!(m.onlyIsolated || /isolated|nocross/i.test(m.marginMode || ""));
+    const crossBtn = $("mode").querySelector('[data-v="cross"]');
+    crossBtn.disabled = isoOnly;
+    if (isoOnly && S.mode === "cross") { S.mode = "isolated"; $("mode").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x.dataset.v === "isolated")); }
     $("coinMax").textContent = "up to " + m.maxLeverage + "x";
     $("lev").max = m.maxLeverage;
     if (S.lev > m.maxLeverage) S.lev = m.maxLeverage;
@@ -69,7 +95,7 @@
     const ticks = [1, ...[0.25, 0.5, 0.75].map((f) => Math.max(2, Math.round(m.maxLeverage * f))), m.maxLeverage].filter((v, i, a) => a.indexOf(v) === i);
     $("levTicks").innerHTML = ticks.map((t) => `<button type="button" data-v="${t}">${t}x</button>`).join("");
     $("levTicks").querySelectorAll("button").forEach((b) => (b.onclick = () => setLev(+b.dataset.v)));
-    document.title = coin + " Leverage — SCOTY";
+    document.title = label(m) + " Leverage — SCOTY";
     renderQuick(); renderStats(); renderOrder(); loadCandles();
   }
 
@@ -128,8 +154,9 @@
   async function loadAccount() {
     if (!S.user) return;
     try {
-      const [st, sp] = await Promise.all([HL.state(S.user), HL.spot(S.user).catch(() => null)]);
+      const [st, sp, ...dx] = await Promise.all([HL.state(S.user), HL.spot(S.user).catch(() => null), ...S.dexes.map((d) => HL.state(S.user, d.name).catch(() => null))]);
       S.account = st;
+      for (const d of dx) if (d?.assetPositions) st.assetPositions = [...(st.assetPositions || []), ...d.assetPositions];
       const u = sp?.balances?.find((b) => b.coin === "USDC");
       S.spotUsdc = u ? num(u.total) - num(u.hold || 0) : 0;
       S.positions = (st.assetPositions || []).map((p) => p.position).filter((p) => num(p.szi) !== 0);
@@ -157,7 +184,7 @@
       S.positions.map((p) => {
         const sz = num(p.szi), long = sz > 0, mark = S.mids[p.coin] || num(p.entryPx), pnl = num(p.unrealizedPnl), roe = num(p.returnOnEquity);
         return `<div class="pos-row">
-          <span><b class="${long ? "up" : "down"}">${long ? "Long" : "Short"}</b> ${esc(p.coin)} <span class="pill-s">${p.leverage?.value || "?"}x ${p.leverage?.type === "isolated" ? "iso" : "cross"}</span></span>
+          <span><b class="${long ? "up" : "down"}">${long ? "Long" : "Short"}</b> ${esc(p.coin.split(":").pop())} <span class="pill-s">${p.leverage?.value || "?"}x ${p.leverage?.type === "isolated" ? "iso" : "cross"}</span></span>
           <span class="mono">${Math.abs(sz)} <small class="muted">${usd(p.positionValue)}</small></span>
           <span class="mono">${fmtPx(p.entryPx)} <small class="muted">${fmtPx(mark)}</small></span>
           <span class="mono ${pnl >= 0 ? "up" : "down"}">${usd(pnl)} <small>${isFinite(roe) ? pct(roe) : ""}</small></span>
@@ -187,7 +214,7 @@
     const r = $("lev"); r.style.setProperty("--p", ((S.lev - 1) / Math.max(1, (m?.maxLeverage || 40) - 1)) * 100 + "%");
     $("levTicks").querySelectorAll("button").forEach((b) => b.classList.toggle("on", +b.dataset.v === S.lev));
     const q = quote();
-    $("qSize").textContent = q ? `${q.sz} ${S.coin} · ${usd(q.notional)}` : "—";
+    $("qSize").textContent = q ? `${q.sz} ${label(market())} · ${usd(q.notional)}` : "—";
     $("qEntry").textContent = q ? fmtPx(q.px) : m ? fmtPx(S.mids[S.coin]) : "—";
     $("qLiq").textContent = q ? (S.mode === "isolated" ? fmtPx(q.liq) : "≈ " + fmtPx(q.liq)) : "—";
     $("qFee").textContent = q ? usd(q.fee, 3) : "—";
@@ -199,7 +226,7 @@
     else if (!S.agent) btn.textContent = "Enable trading";
     else if (!q) { btn.textContent = "Enter margin"; btn.disabled = true; }
     else if (q.notional < 10) { btn.textContent = "Minimum position is $10"; btn.disabled = true; }
-    else btn.textContent = `${long ? "Long" : "Short"} ${S.coin} ${S.lev}x`;
+    else btn.textContent = `${long ? "Long" : "Short"} ${label(market())} ${S.lev}x`;
   }
 
   const agentGone = (msg) => /does not exist|not.*(agent|authorized)|unknown.*(agent|signer)|User or API Wallet/i.test(msg || "");
@@ -229,9 +256,10 @@
     const long = S.side === "long";
     S.busy = true; const btn = $("goBtn"); btn.disabled = true; btn.textContent = "Placing order…"; setStatus("");
     try {
+      if (q.m.dex) await HL.ensureDexAbstraction(S.agent, S.user);
       await HL.updateLeverage(S.agent, q.m.asset, S.lev, S.mode === "cross");
       const f = await HL.marketOrder(S.agent, { asset: q.m.asset, isBuy: long, sz: q.sz, px: q.px, szDecimals: q.m.szDecimals, slippage: +$("slip").value });
-      setStatus(`✅ ${long ? "Long" : "Short"} ${S.coin} ${S.lev}x opened${f.totalSz ? `: ${f.totalSz} ${S.coin} @ ${fmtPx(f.avgPx)}` : ""}.`, "ok");
+      setStatus(`✅ ${long ? "Long" : "Short"} ${label(market())} ${S.lev}x opened${f.totalSz ? `: ${f.totalSz} ${label(market())} @ ${fmtPx(f.avgPx)}` : ""}.`, "ok");
       $("amt").value = "";
       setTimeout(loadAccount, 600);
     } catch (e) {
@@ -247,10 +275,11 @@
     if (!p || !m) return;
     if (!S.agent) return enable();
     const sz = Math.abs(num(p.szi)), isBuy = num(p.szi) < 0, px = S.mids[coin] || num(p.entryPx);
+    if (!m) return;
     b.disabled = true; b.textContent = "Closing…";
     try {
       const f = await HL.marketOrder(S.agent, { asset: m.asset, isBuy, sz, px, szDecimals: m.szDecimals, reduceOnly: true, slippage: +$("slip").value });
-      setStatus(`✅ Closed ${coin}${f.avgPx ? ` @ ${fmtPx(f.avgPx)}` : ""}.`, "ok");
+      setStatus(`✅ Closed ${label(m)}${f.avgPx ? ` @ ${fmtPx(f.avgPx)}` : ""}.`, "ok");
     } catch (e) {
       const msg = e.message || String(e);
       if (agentGone(msg)) { HL.forgetAgent(W.address); S.agent = null; }
@@ -261,6 +290,14 @@
 
   // ── wiring ──
   function bind() {
+    $("kind").querySelectorAll("button").forEach((b) => (b.onclick = () => {
+      if (S.kind === b.dataset.k) return;
+      S.kind = b.dataset.k;
+      const first = S.kind === "stock"
+        ? (S.markets.find((m) => m.kind === "stock" && label(m) === "TSLA") || S.markets.filter((m) => m.kind === "stock").sort((a, c) => num(c.ctx.dayNtlVlm) - num(a.ctx.dayNtlVlm))[0])
+        : S.byCoin.get("HYPE") || S.markets.find((m) => m.kind === "crypto");
+      if (first) pick(first.name); else { renderQuick(); setStatus("Stock markets aren't available right now.", "err"); }
+    }));
     $("coinBtn").onclick = (e) => { e.stopPropagation(); toggleDrop($("coinDrop").hidden); };
     $("coinDrop").onclick = (e) => e.stopPropagation();
     document.addEventListener("click", () => toggleDrop(false));
@@ -300,8 +337,8 @@
 
   async function tickMids() {
     try {
-      const mids = await HL.mids();
-      for (const k in mids) S.mids[k] = num(mids[k]);
+      const all = await Promise.all([HL.mids(), ...S.dexes.map((d) => HL.mids(d.name).catch(() => ({})))]);
+      for (const mids of all) for (const k in mids) S.mids[k] = num(mids[k]);
       renderStats(); renderOrder(); if (S.candles.length) drawChart();
       if (S.positions.length) renderPositions();
     } catch (_) {}

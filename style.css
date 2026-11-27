@@ -553,3 +553,8 @@ a.burn-row:hover{border-color:rgba(255,140,90,.5)}
   .burn-list{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:14px}
   .burn-amt b{font-size:1.8rem}
 }
+
+.lev-kind{width:100%;max-width:240px;margin:0;order:-1;flex-basis:100%}
+.lev-kind button.on.buy{background:#fff;color:#000}
+.lev-kindlbl{display:block;color:var(--soft);font-size:.75rem;margin-top:2px}
+#mode button:disabled{opacity:.35;cursor:not-allowed}

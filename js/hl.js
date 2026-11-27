@@ -157,12 +157,24 @@
     return st.filled || st.resting || st;
   }
 
+  // HIP-3 (builder-deployed) markets keep margin per dex. Dex abstraction lets them use the
+  // account's main USDC balance automatically; the agent can switch it on once.
+  async function ensureDexAbstraction(agent, user) {
+    const k = "scoty.hl.dexabs." + user.toLowerCase();
+    try { if (localStorage.getItem(k)) return; } catch (_) {}
+    try { await exchange(agent, { type: "agentEnableDexAbstraction" }); }
+    catch (e) { if (!/already|enabled/i.test(e.message || "")) throw e; }
+    try { localStorage.setItem(k, "1"); } catch (_) {}
+  }
+
   window.SCOTY_HL = {
     API, pack, actionHash, signL1, wire, roundPx, roundSz, info, exchange,
     loadAgent, forgetAgent, approveAgent, updateLeverage, marketOrder,
-    meta: () => info({ type: "metaAndAssetCtxs" }),
-    mids: () => info({ type: "allMids" }),
-    state: (user) => info({ type: "clearinghouseState", user }),
+    meta: (dex) => info(dex ? { type: "metaAndAssetCtxs", dex } : { type: "metaAndAssetCtxs" }),
+    mids: (dex) => info(dex ? { type: "allMids", dex } : { type: "allMids" }),
+    state: (user, dex) => info(dex ? { type: "clearinghouseState", user, dex } : { type: "clearinghouseState", user }),
+    perpDexs: () => info({ type: "perpDexs" }),
+    ensureDexAbstraction,
     spot: (user) => info({ type: "spotClearinghouseState", user }),
     candles: (coin, interval, startTime) => info({ type: "candleSnapshot", req: { coin, interval, startTime, endTime: Date.now() } }),
     extraAgents: (user) => info({ type: "extraAgents", user }),

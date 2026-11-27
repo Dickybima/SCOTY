@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Leverage — SCOTY</title>
-<meta name="description" content="Go long or short with leverage on HYPE, BTC, ETH, SOL and more, powered by Hyperliquid perps. Non-custodial.">
+<meta name="description" content="Go long or short with leverage on crypto and stocks, powered by Hyperliquid perps. Non-custodial.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/favicon.png?v=3">
@@ -26,7 +26,7 @@
       <div>
         <p class="eyebrow">Leverage</p>
         <h1 class="title">Go <em>long</em> or <em>short</em>.</h1>
-        <p class="sub">Trade perps with leverage on HYPE, BTC, ETH, SOL and 100+ markets, powered by <a class="link" href="https://hyperliquid.xyz" target="_blank" rel="noopener">Hyperliquid</a>. Your wallet stays in control.</p>
+        <p class="sub">Trade perps with leverage on crypto like HYPE, BTC, ETH and SOL, and on stocks like TSLA, NVDA and AAPL, powered by <a class="link" href="https://hyperliquid.xyz" target="_blank" rel="noopener">Hyperliquid</a>. Your wallet stays in control.</p>
       </div>
     </header>
 
@@ -34,8 +34,10 @@
       <div class="tk-main">
         <!-- market header -->
         <section class="panel lev-head">
+          <div class="seg lev-kind" id="kind"><button type="button" data-k="crypto" class="on buy">Crypto</button><button type="button" data-k="stock" class="buy">Stocks</button></div>
           <div class="lev-pick">
             <button class="lev-coin" id="coinBtn" type="button"><span class="lev-sym" id="coinSym">—</span><span class="pill-s" id="coinMax">—</span><span class="caret">▾</span></button>
+            <small class="lev-kindlbl" id="coinKind"></small>
             <div class="lev-drop" id="coinDrop" hidden>
               <input class="input" id="coinSearch" placeholder="Search market…" autocomplete="off">
               <div class="lev-list" id="coinList"></div>

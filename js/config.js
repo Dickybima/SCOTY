@@ -49,6 +49,9 @@ window.SCOTY_CONFIG = {
   // The official $SCOTY token, featured at the top of Explore ("" for none)
   officialToken: "0x3c1941ad71a81b840b103412f901a647b34178ac",
 
+  // Hyperliquid HIP-3 dexes listed under "Stocks" on the Leverage page
+  hlStockDexes: ["xyz"],
+
   // Where $SCOTY burns go (tokens sent here are gone for good); burns that reduce totalSupply count too
   burnAddresses: ["0x000000000000000000000000000000000000dEaD"],
 
