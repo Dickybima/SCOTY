@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SCOTY — logo burn</title>
+<style>
+  *{margin:0;padding:0}
+  html,body{background:#000;overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Time-driven: the SCOTY logo catches lavender fire from the bottom, burns away
+// with a glowing edge, embers and smoke, and leaves nothing but black.
+// Size from the URL: ?w=1080&h=1080 (default) or ?w=1920&h=1080. Render with render.cjs.
+const Q = new URLSearchParams(location.search);
+const W = +Q.get("w") || 1080, H = +Q.get("h") || 1080;
+const DURATION = 7.2;
+const cv = document.getElementById("c");
+cv.width = W; cv.height = H; cv.style.width = W + "px"; cv.style.height = H + "px";
+const ctx = cv.getContext("2d");
+
+const clamp = (v) => Math.max(0, Math.min(1, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+const hash = (i, s) => { const x = Math.sin(i * 127.1 + s * 311.7) * 43758.5453; return x - Math.floor(x); };
+
+const S = Math.min(W, H);
+const L = Math.round(S * 0.56);              // logo size
+const X0 = Math.round(W / 2 - L / 2), Y0 = Math.round(H / 2 - L / 2);
+const R = L * 0.22;                          // rounded corners
+
+// ── value-noise fbm ────────────────────────────────
+const G = 256, perm = new Float32Array(G * G);
+for (let i = 0; i < G * G; i++) perm[i] = hash(i, 7);
+function vn(x, y) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const a = perm[((yi & 255) * G + (xi & 255))], b = perm[((yi & 255) * G + ((xi + 1) & 255))];
+  const c = perm[(((yi + 1) & 255) * G + (xi & 255))], d = perm[(((yi + 1) & 255) * G + ((xi + 1) & 255))];
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+const fbm = (x, y) => vn(x, y) * 0.5 + vn(x * 2.1, y * 2.1) * 0.27 + vn(x * 4.3, y * 4.3) * 0.15 + vn(x * 8.7, y * 8.7) * 0.08;
+
+// burn order per pixel: noise + bottom-first gradient (0 burns first, 1 last)
+const field = new Float32Array(L * L);
+for (let y = 0; y < L; y++) for (let x = 0; x < L; x++) {
+  const nx = x / L, ny = y / L;
+  field[y * L + x] = fbm(nx * 5 + 3, ny * 5 + 9) * 0.5 + (1 - ny) * 0.42 + Math.abs(nx - 0.5) * 0.08;
+}
+let FMIN = 1e9, FMAX = -1e9;
+for (const v of field) { FMIN = Math.min(FMIN, v); FMAX = Math.max(FMAX, v); }
+for (let i = 0; i < field.length; i++) field[i] = (field[i] - FMIN) / (FMAX - FMIN);
+// equalise so the burn front eats the logo at a steady pace
+{ const idx = new Uint32Array(field.length).map((_, i) => i); const f = field.slice(); idx.sort((a, b) => f[a] - f[b]);
+  for (let r = 0; r < idx.length; r++) field[idx[r]] = r / (idx.length - 1); }
+
+// rounded-rect alpha mask
+const mask = new Float32Array(L * L);
+for (let y = 0; y < L; y++) for (let x = 0; x < L; x++) {
+  const dx = Math.max(R - x - 0.5, 0, x + 0.5 - (L - R)), dy = Math.max(R - y - 0.5, 0, y + 0.5 - (L - R));
+  mask[y * L + x] = clamp(R - Math.hypot(dx, dy) + 0.5);
+}
+
+const img = new Image();
+img.src = "logo-hi-elysium.png";
+let src = null;
+const out = ctx.createImageData(L, L), eout = ctx.createImageData(L, L);
+const eLayer = document.createElement("canvas"); eLayer.width = L; eLayer.height = L; const ectx = eLayer.getContext("2d");
+const layer = document.createElement("canvas"); layer.width = L; layer.height = L;
+const lctx = layer.getContext("2d");
+const SM = Math.round(L / 5), smallC = document.createElement("canvas"); smallC.width = SM; smallC.height = SM; const small = smallC.getContext("2d");
+// ember sprite
+const SP = 32, spC = document.createElement("canvas"); spC.width = SP; spC.height = SP; { const x = spC.getContext("2d"), gr = x.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, "rgba(255,250,255,1)"); gr.addColorStop(0.25, "rgba(210,195,255,.9)"); gr.addColorStop(1, "rgba(167,139,250,0)"); x.fillStyle = gr; x.fillRect(0, 0, SP, SP); }
+
+// fire palette along the edge: white-hot → lavender → deep violet → char
+function fire(k) { // k: 0 at the burnt side of the edge … 1 at the intact side
+  const stops = [[0, [40, 18, 80]], [0.25, [124, 92, 219]], [0.5, [167, 139, 250]], [0.72, [222, 210, 255]], [0.86, [255, 255, 255]], [1, [255, 196, 120]]];
+  for (let i = 1; i < stops.length; i++) if (k <= stops[i][0]) {
+    const [a, A] = stops[i - 1], [b, B] = stops[i], f = (k - a) / (b - a);
+    return [A[0] + (B[0] - A[0]) * f, A[1] + (B[1] - A[1]) * f, A[2] + (B[2] - A[2]) * f];
+  }
+  return stops[stops.length - 1][1];
+}
+
+// embers and smoke (deterministic)
+const EMB = [], SMK = [];
+for (let i = 0; i < 420; i++) EMB.push({ u: hash(i, 1), t0: 1.2 + hash(i, 2) * 4.2, life: 1.1 + hash(i, 3) * 1.6, vx: (hash(i, 4) - 0.5) * 70, vy: -(80 + hash(i, 5) * 200), s: 1.2 + hash(i, 6) * 3.2, w: hash(i, 8) * 6.28 });
+for (let i = 0; i < 70; i++) SMK.push({ u: hash(i, 11), t0: 1.4 + hash(i, 12) * 4.4, life: 2.2 + hash(i, 13) * 1.6, vx: (hash(i, 14) - 0.5) * 40, vy: -(40 + hash(i, 15) * 60), r: 30 + hash(i, 16) * 60 });
+
+const EDGE = 0.042;                               // glowing band width (in burn-order units)
+const thAt = (t) => -EDGE + (1 + 2 * EDGE) * (x => x * 0.75 + ease(x) * 0.25)(prog(t, 1.2, 5.8));
+// where the edge is at a given horizontal position (approximate): the row whose order ≈ th
+const EC = new Map();
+function edgeY(u, th) {
+  const key = u + ':' + th; if (EC.has(key)) return EC.get(key);
+  const r = edgeY0(u, th); EC.set(key, r); return r;
+}
+function edgeY0(u, th) {
+  const x = Math.min(L - 1, Math.floor(u * L));
+  for (let y = L - 1; y >= 0; y--) if (field[y * L + x] > th) return y;
+  return -1;
+}
+
+window.render = function (t) {
+  ctx.globalCompositeOperation = "source-over";
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  const th = thAt(t);
+  const burnK = prog(t, 1.2, 5.8);
+
+  // ambient glow under the logo (fades as it burns)
+  const glowA = (0.12 + 0.06 * Math.sin(Math.PI * burnK)) * (1 - prog(t, 5.2, 6.4)) * prog(t, 0, 0.6);
+  const g = ctx.createRadialGradient(W / 2, H / 2 + L * 0.15, 0, W / 2, H / 2 + L * 0.15, L * 0.95);
+  g.addColorStop(0, `rgba(167,139,250,${glowA})`); g.addColorStop(1, "rgba(167,139,250,0)");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  if (src) {
+    const d = out.data, e = eout.data, fi = prog(t, 0, 0.6), flick = 0.9 + 0.1 * Math.sin(t * 37) * Math.sin(t * 13);
+    for (let i = 0, p = 0; i < L * L; i++, p += 4) {
+      const m = mask[i];
+      e[p + 3] = 0;
+      if (m === 0) { d[p + 3] = 0; continue; }
+      const v = field[i] - th;                       // <0 burnt · 0..EDGE burning · >EDGE intact
+      let r = src[p], gg = src[p + 1], b = src[p + 2], a = 1;
+      if (v < 0) { a = 0; }
+      else if (v < EDGE) {
+        const k = v / EDGE, [fr, fg, fb] = fire(k);
+        const mix = k < 0.85 ? 1 : 1 - (k - 0.85) / 0.15;
+        r = r + (fr * flick - r) * mix; gg = gg + (fg * flick - gg) * mix; b = b + (fb * flick - b) * mix;
+        a = k < 0.12 ? k / 0.12 : 1;
+        e[p] = fr; e[p + 1] = fg; e[p + 2] = fb; e[p + 3] = 255 * m * (1 - Math.abs(k - 0.6) / 0.6);
+      } else if (v < EDGE * 4) {                   // scorch: darken + warm tint just above the flame
+        const k = 1 - (v - EDGE) / (EDGE * 3);
+        r *= 1 - 0.55 * k; gg *= 1 - 0.65 * k; b *= 1 - 0.45 * k;
+      }
+      d[p] = r; d[p + 1] = gg; d[p + 2] = b; d[p + 3] = 255 * a * m * fi;
+    }
+    lctx.putImageData(out, 0, 0); ectx.putImageData(eout, 0, 0);
+    const pop = 0.94 + 0.06 * ease(prog(t, 0, 0.7));
+    ctx.save();
+    ctx.translate(W / 2, H / 2); ctx.scale(pop, pop); ctx.translate(-W / 2, -H / 2);
+    // soft bloom of the burning edge
+    small.clearRect(0, 0, SM, SM); small.filter = `blur(${Math.max(2, Math.round(SM / 45))}px)`; small.drawImage(eLayer, 0, 0, SM, SM); small.filter = "none";
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high"; ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = burnK > 0 && burnK < 1 ? 1 : 0;
+    ctx.drawImage(smallC, X0 - L * 0.03, Y0 - L * 0.03, L * 1.06, L * 1.06); ctx.drawImage(smallC, X0 - L * 0.03, Y0 - L * 0.03, L * 1.06, L * 1.06);
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+    ctx.drawImage(layer, X0, Y0);
+    ctx.restore();
+  }
+
+  // smoke
+  for (const s of SMK) {
+    const lt = t - s.t0; if (lt < 0 || lt > s.life) continue;
+    const ey = edgeY(s.u, thAt(s.t0)); if (ey < 0) continue;
+    const k = lt / s.life, x = X0 + s.u * L + s.vx * lt, y = Y0 + ey + s.vy * lt;
+    const rr = s.r * (S / 1080) * (0.6 + k * 1.4);
+    const sg = ctx.createRadialGradient(x, y, 0, x, y, rr);
+    sg.addColorStop(0, `rgba(90,80,120,${0.08 * Math.sin(Math.PI * k)})`); sg.addColorStop(1, "rgba(90,80,120,0)");
+    ctx.fillStyle = sg; ctx.fillRect(x - rr, y - rr, rr * 2, rr * 2);
+  }
+  // embers
+  ctx.globalCompositeOperation = "lighter";
+  for (const e of EMB) {
+    const lt = t - e.t0; if (lt < 0 || lt > e.life) continue;
+    const ey = edgeY(e.u, thAt(e.t0)); if (ey < 0) continue;
+    const k = lt / e.life, sc = S / 1080;
+    const x = X0 + e.u * L + (e.vx * lt + Math.sin(lt * 3 + e.w) * 14) * sc, y = Y0 + ey + (e.vy * lt + 30 * lt * lt) * sc;
+    const a = (1 - k) * (0.6 + 0.4 * Math.sin(t * 20 + e.w)), rad = e.s * sc * (1 - k * 0.5);
+    const q = rad * 4; ctx.globalAlpha = clamp(a); ctx.drawImage(spC, x - q / 2, y - q / 2, q, q);
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+};
+window.DURATION = DURATION;
+window.ready = new Promise((res) => {
+  const go = () => {
+    const c = document.createElement("canvas"); c.width = L; c.height = L;
+    const x = c.getContext("2d"); x.drawImage(img, 0, 0, L, L);
+    src = x.getImageData(0, 0, L, L).data; window.render(0); res();
+  };
+  img.complete ? go() : (img.onload = go);
+});
+</script>
+</body>
+</html>

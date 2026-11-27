@@ -18,7 +18,7 @@ const FPS = 30;
 const S = scale ? +scale : (html === "meet-scoty.html" || html === "introducing-elysium.html" || html === "how-to-launch.html") ? 1.5 : 1;
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: ["--allow-file-access-from-files"] });
   const page = await browser.newPage({ viewport: { width: Math.round(W / S), height: Math.round(H / S) }, deviceScaleFactor: S });
   await page.goto("file://" + path.join(__dirname, html) + `?w=${W}&h=${H}`, { waitUntil: "networkidle" });
   await page.evaluate(async () => { await document.fonts.ready; if (window.ready) await window.ready; });
