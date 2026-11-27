@@ -49,6 +49,9 @@ window.SCOTY_CONFIG = {
   // The official $SCOTY token, featured at the top of Explore ("" for none)
   officialToken: "0x3c1941ad71a81b840b103412f901a647b34178ac",
 
+  // Where $SCOTY burns go (tokens sent here are gone for good); burns that reduce totalSupply count too
+  burnAddresses: ["0x000000000000000000000000000000000000dEaD"],
+
   // Token addresses hidden from Explore and Profile (e.g. test launches)
   hiddenTokens: [],
   // Launches before this time (ms) are test launches and are hidden too (cleared 2026-11-27)
@@ -92,6 +95,7 @@ window.SCOTY_CONFIG = {
     "function balanceOf(address) view returns (uint256)",
     "function allowance(address owner, address spender) view returns (uint256)",
     "function approve(address spender, uint256 amount) returns (bool)",
+    "event Transfer(address indexed from, address indexed to, uint256 value)",
   ],
   // Custom errors so reverts read as words
   montraErrors: [

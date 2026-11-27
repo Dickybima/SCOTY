@@ -530,3 +530,26 @@ a.txrow:hover{background:rgba(31,41,55,.35)}
   .pos-row > :nth-child(2),.pos-row > :nth-child(5){display:none}
   .lev-list button{grid-template-columns:1fr auto 80px 64px}
 }
+
+/* ── Burned $SCOTY (Explore) ─────────────────────────────── */
+.burn{position:relative;display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:stretch;padding:22px 24px;margin-bottom:22px;border-radius:20px;overflow:hidden;
+  background:radial-gradient(520px 200px at 0% 0%,rgba(255,120,60,.14),transparent 70%),radial-gradient(520px 220px at 100% 100%,rgba(167,139,250,.14),transparent 70%),var(--card);border:1px solid rgba(255,140,90,.28)}
+.burn-badge{display:inline-block;font:600 .72rem Poppins,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#1a0a00;background:linear-gradient(90deg,#ffb36b,#ff7a45);border-radius:999px;padding:3px 10px;margin-bottom:8px}
+.burn-amt{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.burn-amt b{font:700 2.2rem var(--mono);letter-spacing:-.02em;background:linear-gradient(to bottom,#fff,#ffd2b0);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.burn-amt span{font:600 1rem var(--mono);color:#ffb38a}
+.burn-sub{color:var(--muted);font-size:.92rem;margin-top:2px}
+.burn-sub b{color:#fff;font-family:var(--mono)}
+.burn-bar{margin-top:14px;max-width:460px;height:8px}
+.burn-bar i{background:linear-gradient(90deg,#ff7a45,#ffb36b,var(--accent));box-shadow:0 0 14px rgba(255,122,69,.55)}
+.burn-links{margin-top:12px;display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem}
+.burn-list{display:flex;flex-direction:column;gap:6px;border-left:1px solid var(--line);padding-left:22px}
+.burn-list small{color:var(--soft);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.burn-row{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.35);border:1px solid var(--line);font:500 .85rem var(--mono);color:#fff}
+a.burn-row:hover{border-color:rgba(255,140,90,.5)}
+.burn-row.muted,.burn-row .muted{color:var(--soft)}
+@media (max-width:760px){
+  .burn{grid-template-columns:1fr;padding:18px}
+  .burn-list{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:14px}
+  .burn-amt b{font-size:1.8rem}
+}

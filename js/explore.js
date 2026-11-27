@@ -126,6 +126,7 @@
       }
     } catch (e) { console.warn("official token unavailable", e); }
     paint(d);
+    loadBurn(addr, d).catch((e) => console.warn("burn stats unavailable", e));
     if (d.name || d.symbol) {
       officialEntry = {
         name: d.name || "SCOTY", symbol: d.symbol || "SCOTY", description: d.description || "The official SCOTY token.",
@@ -134,6 +135,52 @@
       };
       stats(); render();
     }
+  }
+
+  // ── Burned $SCOTY ──
+  async function loadBurn(addr, d) {
+    const el = $("burn"), rp = readProvider(chain);
+    const token = new ethers.Contract(addr, CFG.tokenAbi, rp);
+    const sinks = (CFG.burnAddresses || []).map((a) => ethers.getAddress(a));
+    const [dec, total, ...bals] = await Promise.all([token.decimals().catch(() => 18n), token.totalSupply(), ...sinks.map((a) => token.balanceOf(a).catch(() => 0n))]);
+    const one = 10n ** BigInt(dec);
+    const initial = BigInt(CFG.supply || 0) * one;
+    const toNum = (v) => Number(v / one) + Number(v % one) / Number(one);
+    const burnedRaw = bals.reduce((s, b) => s + b, 0n) + (initial > total ? initial - total : 0n);
+    const burned = toNum(burnedRaw);
+    const supply = toNum(initial > total ? initial : total) || 1;
+    const share = burned / supply;
+    const fmtAmt = (n) => n >= 1e9 ? (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+    const sym = esc(d.symbol || "SCOTY");
+    const paint = (rows) => {
+      el.innerHTML = `
+        <div class="burn-main">
+          <span class="burn-badge">🔥 Burned</span>
+          <div class="burn-amt"><b>${fmtAmt(burned)}</b> <span>$${sym}</span></div>
+          <div class="burn-sub"><b>${(share * 100).toFixed(share < 0.01 ? 3 : 2)}%</b> of the supply is gone forever${d.price && burned ? ` · ≈ ${fmtUsd(burned * d.price)}` : ""}</div>
+          <div class="pgbar burn-bar"><i style="width:${Math.min(100, Math.max(share > 0 ? 0.6 : 0, share * 100))}%"></i></div>
+          <div class="burn-links">${sinks.map((a) => `<a class="link mono" href="${chain.addressUrl(a)}" target="_blank" rel="noopener">Burn address ${short(a)} ↗</a>`).join("")}</div>
+        </div>
+        <div class="burn-list">
+          <small>Recent burns</small>
+          ${rows === null ? `<div class="burn-row muted">Loading…</div>` : rows.length ? rows.map((r) => `<a class="burn-row" href="${chain.txUrl(r.tx)}" target="_blank" rel="noopener"><span>🔥 ${fmtAmt(r.amount)} $${sym}</span><span class="muted">${r.ts ? ago(r.ts) : ""} ↗</span></a>`).join("") : `<div class="burn-row muted">No burns yet. Stay tuned.</div>`}
+        </div>`;
+      el.hidden = false;
+    };
+    paint(null);
+    let rows = [];
+    try {
+      const T = ethers.id("Transfer(address,address,uint256)");
+      const zero = ethers.zeroPadValue(ethers.ZeroAddress, 32);
+      const to = [...sinks, ethers.ZeroAddress].map((a) => ethers.zeroPadValue(a, 32));
+      const logs = await rp.getLogs({ address: addr, topics: [T, null, to], fromBlock: chain.factoryDeployBlock || 0, toBlock: "latest" });
+      const last = logs.filter((l) => l.topics[1] !== zero).slice(-5).reverse();
+      rows = await Promise.all(last.map(async (l) => {
+        const b = await rp.getBlock(l.blockNumber).catch(() => null);
+        return { tx: l.transactionHash, amount: toNum(BigInt(l.data)), ts: b ? b.timestamp * 1000 : 0 };
+      }));
+    } catch (e) { console.warn("burn history unavailable", e); }
+    paint(rows);
   }
 
   stats(); render(); openFromUrl();
