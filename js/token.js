@@ -212,7 +212,7 @@
     const col = up ? "var(--accent)" : "var(--bad)";
     el.innerHTML = `
       <svg viewBox="0 0 ${W0} ${H0}" preserveAspectRatio="none" class="chart-svg">
-        <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${up ? "#befd08" : "#ff5c5c"}" stop-opacity=".28"/><stop offset="1" stop-color="${up ? "#befd08" : "#ff5c5c"}" stop-opacity="0"/></linearGradient></defs>
+        <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${up ? "#a78bfa" : "#ff5c5c"}" stop-opacity=".28"/><stop offset="1" stop-color="${up ? "#a78bfa" : "#ff5c5c"}" stop-opacity="0"/></linearGradient></defs>
         <polygon points="${X(0)},${H0} ${line} ${X(vals.length - 1)},${H0}" fill="url(#cg)"/>
         <polyline points="${line}" fill="none" stroke="${col}" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
         <line id="chX" x1="0" x2="0" y1="0" y2="${H0}" stroke="rgba(255,255,255,.25)" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" style="display:none"/>

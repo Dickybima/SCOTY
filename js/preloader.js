@@ -28,12 +28,13 @@
     fontHref: "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500&display=swap",
     font: '"Pixelify Sans", "Silkscreen", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace',
   };
-  // SCOTY colours: black void, lime venom (from the logo)
+  // SCOTY colours: black void, lavender venom (Elysium); the logo keeps its lime
   var colors = {
     void: "#000000",
     glass: "#a6acb7",
-    venom: "#befd08",
-    gem: "#9be80a",
+    venom: "#a78bfa",
+    slime: "#befd08",
+    gem: "#8b5cf6",
     brass: "#e39a2d",
     spider: "#14141c",
     mark: "#e8233d",
@@ -214,7 +215,7 @@
     void: pk(C.void), starDim: pk(vvShade(C.glass, -0.55)), star: pk(vvShade(C.glass, 0.35)),
     glassHi: pk(vvShade(C.glass, 0.62)), glassTop: pk(vvShade(C.glass, 0.12)), glassEdge: pk(vvShade(C.glass, -0.22)),
     glassBot: pk(vvShade(C.glass, -0.42)), glassDeep: pk(vvShade(C.glass, -0.62)), glassIn: pk(vvShade(C.void, 0.07)),
-    v2: pk(vvShade(C.venom, 0.62)), v1: pk(vvShade(C.venom, 0.3)), v0: pk(C.venom), vd1: pk(vvShade(C.venom, -0.24)),
+    slime: pk(C.slime), v2: pk(vvShade(C.venom, 0.62)), v1: pk(vvShade(C.venom, 0.3)), v0: pk(C.venom), vd1: pk(vvShade(C.venom, -0.24)),
     vd2: pk(vvShade(C.venom, -0.44)), vapor: pk(vvShade(C.venom, -0.5)), mist1: pk(vvShade(C.venom, -0.8)),
     mist2: pk(vvShade(C.venom, -0.68)), fog0: pk(vvShade(C.venom, -0.84)), fog1: pk(vvShade(C.venom, -0.72)),
     fog2: pk(vvShade(C.venom, -0.56)), g1: pk(vvShade(C.gem, -0.66)), g2: pk(vvShade(C.gem, 0.55)),
@@ -984,7 +985,7 @@
             if (gxl >= 0 && gxl < LOGO_W && gyl >= 0 && gyl < LOGO_H) {
               var lch = LOGO[gyl][gxl];
               if (lch === "#") { bcol = gyl < LOGO_H / 2 ? c.logo : c.logoLo; glow(bx3, by, c.v1); }
-              else if (lch === "+") { bcol = c.v0; glow(bx3, by, c.v0); }
+              else if (lch === "+") { bcol = c.slime; glow(bx3, by, c.slime); }
             }
             put(bx3, by, bcol);
           } else if (et <= 1) {
