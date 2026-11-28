@@ -47,7 +47,7 @@ window.SCOTY_CONFIG = {
   launchTag: "0x53434f5459",
 
   // The official $SCOTY token, featured at the top of Explore ("" for none)
-  officialToken: "0x3c1941ad71a81b840b103412f901a647b34178ac",
+  officialToken: "",
 
   // Pair tokens Montra offers besides native HYPE (symbol shown if the chain read fails;
   // USD price from CoinGecko when an id is set, else DexScreener)
