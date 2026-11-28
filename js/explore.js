@@ -94,7 +94,7 @@
         <a class="off-logo" href="${href}"><img src="assets/logo.png?v=3" alt=""></a>
         <div class="off-main">
           <span class="off-badge">⚓ Official token</span>
-          <a class="off-name" href="${href}">${esc(d.name || "SCOTY")} <span>$${esc(d.symbol || "SCOTY")}</span></a>
+          <a class="off-name" href="${href}">${esc(d.name || "SCOTY")} <span>$${esc(d.symbol || "SCTY")}</span></a>
           <div class="off-stats">
             <div><small>Market cap</small><b>${d.mcap ? fmtUsd(d.mcap) : "—"}</b></div>
             <div><small>Price</small><b>${d.price ? "$" + (d.price >= 1 ? d.price.toFixed(2) : d.price.toPrecision(3)) : "—"}</b></div>
@@ -102,14 +102,14 @@
           </div>
         </div>
         <div class="off-cta">
-          <a class="btn btn-main" href="${href}">Trade $${esc(d.symbol || "SCOTY")} →</a>
+          <a class="btn btn-main" href="${href}">Trade $${esc(d.symbol || "SCTY")} →</a>
           <button class="btn" type="button" id="offCa">Copy CA</button>
           <span class="off-ca mono">${short(addr)}</span>
         </div>`;
       el.hidden = false;
       $("offCa").onclick = (e) => { navigator.clipboard?.writeText(addr); e.target.textContent = "Copied!"; setTimeout(() => (e.target.textContent = "Copy CA"), 1200); };
     };
-    paint({ symbol: "SCOTY" });
+    paint({ symbol: "SCTY" });
     const d = {};
     try {
       const rp = readProvider(chain);
@@ -129,7 +129,7 @@
     loadBurn(addr, d).catch((e) => console.warn("burn stats unavailable", e));
     if (d.name || d.symbol) {
       officialEntry = {
-        name: d.name || "SCOTY", symbol: d.symbol || "SCOTY", description: d.description || "The official SCOTY token.",
+        name: d.name || "SCOTY", symbol: d.symbol || "SCTY", description: d.description || "The official SCOTY token.",
         image: d.logo || null, address: addr, creator: d.creator, createdAt: d.createdAt || 0,
         mcap: d.mcap || 0, chain: chain.key, ...(d.launch ? { poolId: d.launch.poolId, quoteIsCurrency0: d.launch.quoteIsCurrency0, supply: d.launch.supply } : {}),
       };
@@ -151,7 +151,7 @@
     const supply = toNum(initial > total ? initial : total) || 1;
     const share = burned / supply;
     const fmtAmt = (n) => n >= 1e9 ? (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : n.toLocaleString("en-US", { maximumFractionDigits: 2 });
-    const sym = esc(d.symbol || "SCOTY");
+    const sym = esc(d.symbol || "SCTY");
     const paint = (rows) => {
       el.innerHTML = `
         <div class="burn-main">
